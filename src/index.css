@@ -1,0 +1,35 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+@layer components {
+  .lbl { @apply block text-xs text-slate-500 mb-1; }
+  .field { @apply w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm bg-white focus:border-brand focus:ring-brand/20; }
+}
+input[type=checkbox], input[type=radio] { color: #14213d; }
+
+/* ---------- polish: smooth transitions, entrance animations, thin scrollbars ---------- */
+html { scroll-behavior: smooth; }
+button, a, input, select, textarea, tr, summary { transition: background-color .15s ease, border-color .15s ease, box-shadow .15s ease, color .15s ease, opacity .15s ease, transform .12s ease; }
+button:not(:disabled):active { transform: scale(.98); }
+input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-visible { outline: none; box-shadow: 0 0 0 3px rgb(43 179 198 / .25); }
+* { scrollbar-width: thin; scrollbar-color: #cbd5e1 transparent; }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; border: 2px solid transparent; background-clip: content-box; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; background-clip: content-box; border: 2px solid transparent; }
+::-webkit-scrollbar-track { background: transparent; }
+@keyframes fade { from { opacity: 0 } to { opacity: 1 } }
+@keyframes rise { from { opacity: 0; transform: translateY(6px) } to { opacity: 1; transform: none } }
+@keyframes pop { from { opacity: 0; transform: translateY(8px) scale(.97) } to { opacity: 1; transform: none } }
+@keyframes slide { from { transform: translateX(32px); opacity: 0 } to { transform: none; opacity: 1 } }
+@keyframes drop { from { opacity: 0; transform: translateY(-4px) } to { opacity: 1; transform: none } }
+.anim-fade { animation: fade .18s ease-out }
+.anim-rise { animation: rise .22s ease-out }
+.anim-pop { animation: pop .2s cubic-bezier(.2,.8,.3,1) }
+.anim-slide { animation: slide .22s cubic-bezier(.2,.8,.3,1) }
+.anim-drop { animation: drop .14s ease-out }
+@media (prefers-reduced-motion: reduce) { *, ::before, ::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }
+
+/* trang Cấu hình phòng & giá, Chính sách giá: phóng to cho dễ nhìn */
+.cfg { zoom: 1.12; }
+.cfg .lbl { @apply text-sm text-slate-600 mb-1.5; }
+.cfg .field { @apply py-3; }
