@@ -171,7 +171,7 @@ export function Policies() {
     <div className="flex items-center gap-3 mb-4"><SearchBox value={s} onChange={setS} ph="Tìm mã/tên chính sách..." /><Seg value={q} onChange={setQ} items={[['all', 'Tất cả'], ['on', 'Đang hoạt động'], ['off', 'Ngưng hoạt động']]} /><div className="flex-1" />
       <Btn onClick={() => nav('/policies/new')}>+ Thêm mới chính sách giá</Btn></div>
     <Card><Table head={['STT', 'Mã chính sách giá', 'Tên chính sách giá', 'Bữa ăn', 'Thời gian áp dụng', 'Trạng thái', 'Thao tác']} rows={list.map((p, i) => ({ key: p.id, cells: [i + 1, <span>{p.ma_chinh_sach_gia}</span>, <b>{p.ten_chinh_sach_gia}</b>,
-      p.bua_an_bao_gom || '—', p.t || 'Luôn luôn', <Toggle checked={p.kich_hoat} onChange={v => pc.patch(p.id, { kich_hoat: v })} />, <RowActions onEdit={() => nav(`/policies/edit/${p.id}`)} onDel={() => pc.remove(p.id)} />] }))} /></Card>
+      p.bua_an_bao_gom || '—', p.t || 'Luôn luôn', <Toggle checked={p.kich_hoat} onChange={v => pc.patch(p.id, { kich_hoat: v })} />, <RowActions extra={['Cập nhật giá', () => nav('/bulk', { state: { pid: p.id, tab: 'price' } })]} onEdit={() => nav(`/policies/edit/${p.id}`)} onDel={() => pc.remove(p.id)} />] }))} /></Card>
     <Pager n={`${list.length} chính sách · Trang 1/1`} label="Số chính sách giá mỗi trang" /></div>;
 }
 // Hai danh sách Chưa gán / Đã gán; mỗi hạng phòng đính kèm các kênh. v.gan = { 'roomId@chanId': true }

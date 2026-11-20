@@ -77,8 +77,8 @@ export const Back = ({ to, children }) => { const nav = useNavigate();
 export function Footer({ ok }) { const nav = useNavigate();
   return <div className="sticky bottom-0 z-10 mt-5 px-5 py-3 bg-white/90 backdrop-blur border border-slate-200 rounded-xl flex items-center justify-end gap-2 shadow-[0_-4px_12px_rgba(0,0,0,.04)]">
     <Btn kind="ghost" onClick={() => nav(-1)}>Huỷ</Btn><Btn type="submit">{ok}</Btn></div>; }
-export const RowActions = ({ onEdit, onDel }) => <div className="flex gap-3 items-center text-slate-500">
-  <button type="button" onClick={onEdit}>✎ Sửa</button><button type="button" onClick={onDel} className="text-red-500">Xoá</button></div>;
+export const RowActions = ({ onEdit, onDel, extra }) => <div className="flex gap-3 items-center text-slate-500">
+  {extra && <button type="button" onClick={extra[1]} className="text-brand-dark">{extra[0]}</button>}<button type="button" onClick={onEdit}>✎ Sửa</button><button type="button" onClick={onDel} className="text-red-500">Xoá</button></div>;
 
 /* Multi-select dropdown: label shows "Tất cả N" when everything is ticked */
 export function MultiSelect({ label, opts, value, onChange, className = '', inline }) {

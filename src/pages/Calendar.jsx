@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ChevronsRight, Copy as CopyIcon, ClipboardPaste, Trash2, Check, Link2, Unlink, ChevronDown, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { ChevronsRight, Pencil, Copy as CopyIcon, ClipboardPaste, Trash2, Check, Link2, Unlink, ChevronDown, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { useDB, fmChans, DAYS, ymd, addDays, wd, num, money, availOf, basePrice, smartPrice, limitOf, isOpen, stdPolicy, dayOf, mutDay, eachDay } from '../store.jsx';
 import { Btn, Card, H2, Tabs, Seg, MultiSelect, toast } from '../ui.jsx';
 
@@ -51,16 +51,17 @@ export function Sales() {
   const { db, commit } = useDB(), nav = useNavigate();
   useEffect(() => { document.documentElement.style.overflow = 'hidden'; return () => { document.documentElement.style.overflow = ''; }; }, []); // trang Bán phòng chỉ cuộn trong bảng
   const [quick, setQuick] = useState(null), [view, setView] = useState('channel'); // 'channel' = kênh → chính sách · 'policy' = chính sách → kênh
-  const [from, setFrom] = useState(today), [to, setTo] = useState(addDays(today, 13)), [pend, setPend] = useState({}), [shut, setShut] = useState({});
-  const flip = k => setShut(o => ({ ...o, [k]: !o[k] })), Chev = ({ k }) => (shut[k] ? <ChevronRight className="inline w-3.5 h-3.5 -ml-1 mr-1" /> : <ChevronDown className="inline w-3.5 h-3.5 -ml-1 mr-1" />);
+  const [from, setFrom] = useState(today), [to, setTo] = useState(addDays(today, 13)), [pch, setPch] = useState(() => db.channels[0]?.id), [pend, setPend] = useState({}), [shut, setShut] = useState({});
+  const flip = k => setShut(o => ({ ...o, [k]: !o[k] })), Chev = ({ k, down }) => (!(down ?? !shut[k]) ? <ChevronRight className="inline w-3.5 h-3.5 -ml-1 mr-1" /> : <ChevronDown className="inline w-3.5 h-3.5 -ml-1 mr-1" />);
   const [rf, setRf] = useState(() => db.rooms.map(r => r.id)), [cf, setCf] = useState(() => db.channels.map(c => c.id)),
     [pf, setPf] = useState(() => db.policies.map(p => p.id)), [show, setShow] = useState(['price']);
   const span = Math.min(62, Math.max(1, Math.round((new Date(to) - new Date(from)) / 864e5) + 1)), days = Array.from({ length: span }, (_, i) => addDays(from, i)), std = stdPolicy(db);
   const shift = n => { setFrom(addDays(from, n * span)); setTo(addDays(to, n * span)); };
   const chOf = f => fmChans(db, f);
+  const edit = (r, p, f, cid, lim) => nav('/bulk', { state: { rid: r.id, pid: p.id, cid, lim, tab: lim || f ? 'limit' : 'price' } }), EditBtn = ({ r, p, f, cid, lim }) => <button type="button" title="Chỉnh sửa trong Cập nhật hàng loạt" className="ml-1.5 align-middle text-slate-400 hover:text-ink" onClick={e => { e.stopPropagation(); edit(r, p, f, cid, lim); }}><Pencil className="inline w-3.5 h-3.5" /></button>;
   const rooms = db.rooms.filter(r => rf.includes(r.id)),
     groups = db.policies.filter(p => pf.includes(p.id)).map(p => { const f = db.formulas.find(x => x.active && x.s === p.ten_chinh_sach_gia);
-      return { p, f, chans: (f ? chOf(f) : p.id === std?.id ? db.channels.map(c => c.id) : []).filter(id => cf.includes(id)) }; }).filter(g => g.f || g.p.id === std?.id);
+      return { p, f, chans: (f ? chOf(f) : p.id === std?.id ? db.channels.map(c => c.id) : []).filter(id => (view === 'channel' ? cf.includes(id) : id === pch)) }; }).filter(g => (g.f || g.p.id === std?.id) && (view === 'channel' || g.chans.length));
   const extras = EXTRAS.filter(([k]) => k !== 'price' && show.includes(k));
   const val = (key, orig) => pend[key] ?? orig, setP = (key, v) => setPend(p => ({ ...p, [key]: v }));
   const wk = d => (wd(d) > 4 ? 'bg-amber-50' : '');
@@ -103,7 +104,8 @@ export function Sales() {
       <Btn kind="ghost" onClick={() => setPend({})}>Hoàn tác</Btn><Btn onClick={save}>Lưu thay đổi</Btn></div>
     <div className="grid grid-cols-4 gap-3 mb-3">
       <MultiSelect inline label="Loại phòng" opts={roomOpts(db)} value={rf} onChange={setRf} />
-      <MultiSelect inline label="Kênh bán" opts={db.channels.map(c => [c.id, c.name])} value={cf} onChange={setCf} />
+      {ch ? <MultiSelect inline label="Kênh bán" opts={db.channels.map(c => [c.id, c.name])} value={cf} onChange={setCf} />
+        : <label className="flex items-center gap-2 text-sm"><span className="text-slate-500 whitespace-nowrap">Kênh bán</span><select className="field !py-2" value={pch} onChange={e => setPch(e.target.value)}>{db.channels.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select></label>}
       <MultiSelect inline label="Chính sách giá" opts={db.policies.map(p => [p.id, p.ten_chinh_sach_gia])} value={pf} onChange={setPf} />
       <MultiSelect inline label="Hiển thị thêm" opts={EXTRAS.map(([k, l]) => [k, l])} value={show} onChange={setShow} /></div>
     <Card className="flex-1 min-h-0 flex flex-col"><div className="overflow-auto flex-1 min-h-0"><table className="table-fixed border-collapse" style={{ width: lead + span * 100 }}>
@@ -112,22 +114,22 @@ export function Sales() {
         <th colSpan={ch ? 2 : 1} className="h-14 px-3 text-left font-medium sticky left-0 top-0 z-40 bg-white">{ch ? 'KÊNH / CHỈ SỐ' : 'LOẠI PHÒNG / CHỈ SỐ'}</th>
         {days.map(d => <th key={d} title={d === today ? 'Hôm nay' : wd(d) > 4 ? 'Thứ 7, CN' : undefined} className={`font-medium sticky top-0 z-30 ${d === today ? 'bg-cyan-100 text-brand-dark' : wd(d) > 4 ? 'bg-amber-100 text-amber-700' : 'bg-white'}`}>{DAYS[wd(d)]}<div className={`text-base font-semibold ${wd(d) > 4 ? '' : 'text-ink'}`}>{+d.slice(8)}</div></th>)}</tr></thead>
       <tbody className="text-sm">{rooms.map(r => <Fragment key={r.id}>
-        <tr className="sticky top-[52px] z-20 border-t-2 border-slate-300 bg-white shadow-[0_1px_0_#cbd5e1]"><td colSpan={ch ? 2 : 1} className={`${LBL} bg-white cursor-pointer select-none`} onClick={() => flip(r.id)}><Chev k={r.id} /><b className="text-ink text-[15px]">{r.ten_phong_vi}</b> <span className="text-slate-500">· {r.so_luong_phong} phòng</span></td>
+        <tr className="sticky top-[52px] z-20 border-t-2 border-slate-300 bg-white shadow-[0_1px_0_#cbd5e1]"><td colSpan={ch ? 2 : 1} className={`${LBL} bg-white cursor-pointer select-none`} onClick={() => flip(ch ? 'c' + r.id : r.id)}><Chev k={r.id} down={ch ? !!shut['c' + r.id] : !shut[r.id]} /><b className="text-ink text-[15px]">{r.ten_phong_vi}</b> <span className="text-slate-500">· {r.so_luong_phong} phòng</span><button type="button" title="Cập nhật phòng trống hàng loạt" className="ml-1.5 align-middle text-slate-400 hover:text-ink" onClick={e => { e.stopPropagation(); nav('/bulk', { state: { rid: r.id, tab: 'avail' } }); }}><Pencil className="inline w-3.5 h-3.5" /></button></td>
           {days.map(d => { const a = availOf(db, r, d), k = `${r.id}|${d}|a`; return <td key={d} title={sold(r, d) ? 'Hết phòng' : undefined} className={`${TD} `}>{cell(k, a, sold(r, d) ? 'text-red-700 font-bold' : 'font-semibold')}</td>; })}</tr>
-        {!shut[r.id] && ch && db.channels.filter(c => cf.includes(c.id)).map(c => { const gs = groups.filter(g => g.chans.includes(c.id)), rows = gs.length * (1 + extras.length);
+        {shut['c' + r.id] && ch && db.channels.filter(c => cf.includes(c.id)).map(c => { const gs = groups.filter(g => g.chans.includes(c.id)), rows = gs.length * (1 + extras.length);
           return gs.map(({ p, f }, gi) => <Fragment key={c.id + p.id}>
             <tr className={gi === 0 ? 'border-t border-slate-300' : 'border-t border-slate-100'}>
               {gi === 0 && <td rowSpan={rows} className="sticky left-0 z-10 bg-white align-top px-3 py-2 border-r border-slate-200"><div className="flex items-center gap-1.5"><b className="text-[15px] text-slate-800">{c.name}</b><span title={c.connected ? 'Đã kết nối' : 'Chưa kết nối'} className="shrink-0">{c.connected ? <Link2 className="w-4 h-4 text-brand-dark" /> : <Unlink className="w-4 h-4 text-slate-300" />}</span></div></td>}
-              <td style={{ left: 169 }} className="h-10 px-3 sticky z-10 bg-white whitespace-nowrap overflow-hidden text-ellipsis border-r border-slate-100">{badge(f)}<span className="font-medium">Giá bán</span> <span className="text-slate-400">· {p.ten_chinh_sach_gia}</span></td>
+              <td style={{ left: 169 }} className="h-10 px-3 sticky z-10 bg-white whitespace-nowrap overflow-hidden text-ellipsis border-r border-slate-100">{badge(f)}<span className="font-medium">Giá bán</span><EditBtn r={r} p={p} f={f} cid={c.id} /> <span className="text-slate-400">· {p.ten_chinh_sach_gia}</span></td>
               {priceTds(r, p, f, c.id)}</tr>
-            {extras.map(([k, label, type]) => <tr key={k} className="border-t border-slate-100"><td style={{ left: 169 }} className="h-10 px-3 sticky z-10 bg-white text-slate-600 whitespace-nowrap border-r border-slate-100">{label}</td>{extraTds(r, p, c.id, k, type)}</tr>)}
+            {extras.map(([k, label, type]) => <tr key={k} className="border-t border-slate-100"><td style={{ left: 169 }} className="h-10 px-3 sticky z-10 bg-white text-slate-600 whitespace-nowrap border-r border-slate-100">{label}<EditBtn r={r} p={p} f={f} cid={c.id} lim={k} /></td>{extraTds(r, p, c.id, k, type)}</tr>)}
           </Fragment>); })}
         {!shut[r.id] && !ch && groups.map(({ p, f, chans }, gi) => { const c = PAL[gi % PAL.length]; return <Fragment key={p.id}>
-          <tr className={`border-t border-slate-200 ${c.bg}`}><td className={`${LBL} ${c.bg} border-l-4 ${c.bar} ${c.text} font-bold cursor-pointer select-none`} onClick={() => flip(r.id + p.id)}><Chev k={r.id + p.id} />{p.ten_chinh_sach_gia} <span className={`ml-1.5 px-1.5 rounded text-white text-[11px] ${f ? 'bg-slate-500' : 'bg-ink'}`} title={f ? 'Giá thông minh: tính từ B' : 'Giá gốc'}>{f ? 'S' : 'B'}</span></td>
+          <tr className={`border-t border-slate-200 ${c.bg}`}><td className={`${LBL} ${c.bg} border-l-4 ${c.bar} ${c.text} font-bold cursor-pointer select-none`} onClick={() => flip(r.id + p.id)}><Chev k={r.id + p.id} />{p.ten_chinh_sach_gia} <span className={`ml-1.5 px-1.5 rounded text-white text-[11px] ${f ? 'bg-slate-500' : 'bg-ink'}`} title={f ? 'Giá thông minh: tính từ B' : 'Giá gốc'}>{f ? 'S' : 'B'}</span><EditBtn r={r} p={p} f={f} cid={pch} /></td>
             {days.map(d => <td key={d} />)}</tr>
           {!shut[r.id + p.id] && chans.map(cid => <Fragment key={cid}>
             <tr className="border-t border-slate-100"><td className={`${LBL} bg-white border-l-4 ${c.bar} pl-6`}><span className={`inline-block w-2 h-2 rounded-full mr-2 ${c.dot}`} /><b className="font-semibold text-slate-800">{db.channels.find(x => x.id === cid).name}</b></td>{priceTds(r, p, f, cid)}</tr>
-            {extras.map(([k, label, type]) => <tr key={k} className="border-t border-slate-100"><td className={`${LBL} bg-white border-l-4 ${c.bar} pl-10 text-slate-500`}>└ {label}</td>{extraTds(r, p, cid, k, type)}</tr>)}
+            {extras.map(([k, label, type]) => <tr key={k} className="border-t border-slate-100"><td className={`${LBL} bg-white border-l-4 ${c.bar} pl-10 text-slate-500`}>└ {label}<EditBtn r={r} p={p} f={f} cid={cid} lim={k} /></td>{extraTds(r, p, cid, k, type)}</tr>)}
           </Fragment>)}
         </Fragment>; })}
       </Fragment>)}</tbody></table></div></Card>
@@ -179,17 +181,17 @@ function useDateRows(master, keys, full) {
   return { det, get, follows: k => par(k) !== k && !det[k],
     setAt: (k, i, patch, dates) => { if (dates || full) detach(k); set(k, rs => rs.map((x, j) => j === i ? (typeof patch === 'function' ? patch(x) : { ...x, ...patch }) : x)); },
     add: k => { detach(k); set(k, rs => [...rs, { ...newRow(), ...nextRange(rs[rs.length - 1]) }]); },
-    del: (k, i) => { detach(k); set(k, rs => rs.length > 1 ? rs.filter((_, j) => j !== i) : [newRow()]); },
+    del: (k, i) => { detach(k); set(k, rs => rs.filter((_, j) => j !== i)); },
     copyAll: k => setRR(prev => { const out = { ...prev }; keys.forEach(o => { if (o !== k) out[o] = copyRows(prev[k] ?? [newRow()]); }); return out; }),
     put: items => { setRR(prev => { const out = { ...prev }; items.forEach(([k, rows]) => { out[k] = copyRows(rows); }); return out; }); setDet(d => { const o = { ...d }; items.forEach(([k, , f]) => { if (f) o[k] = true; else delete o[k]; }); return o; }); } };
 }
 const LIMITS = [['stop', 'Ngừng bán', 1], ['cta', 'Không nhận check-in', 1], ['ctd', 'Không nhận check-out', 1], ['maxav', 'Giới hạn bán'], ['minthr', 'Số đêm tối thiểu'], ['maxstay', 'Số đêm tối đa'], ['minarr', 'Tối thiểu theo ngày đến']];
 
 export function Bulk() {
-  const { db, commit } = useDB();
-  const [tab, setTab] = useState('avail'), [sub, setSub] = useState('dow');
-  const [rf, setRf] = useState(() => db.rooms.map(r => r.id)), [cf, setCf] = useState(() => db.channels.map(c => c.id)), [pf, setPf] = useState(() => db.policies.map(p => p.id));
-  const [from, setFrom] = useState(today), [to, setTo] = useState(addDays(today, 29)), [pFrom, setPFrom] = useState(today), [pTo, setPTo] = useState(addDays(today, 364)), [dowR, setDowR] = useState({}), [shutG, setShutG] = useState({}), [limSel, setLimSel] = useState(['stop']), [roomClip, setRoomClip] = useState(null);
+  const { db, commit } = useDB(), go = useLocation().state;
+  const [tab, setTab] = useState(go?.tab || 'avail'), [sub, setSub] = useState('dow');
+  const [rf, setRf] = useState(() => go?.rid ? [go.rid] : db.rooms.map(r => r.id)), [cf, setCf] = useState(() => go?.cid ? [go.cid] : db.channels.map(c => c.id)), [pf, setPf] = useState(() => go?.pid ? [go.pid] : db.policies.map(p => p.id));
+  const [from, setFrom] = useState(today), [to, setTo] = useState(addDays(today, 29)), [pFrom, setPFrom] = useState(today), [pTo, setPTo] = useState(addDays(today, 364)), [dowR, setDowR] = useState({}), [shutG, setShutG] = useState({}), [limSel, setLimSel] = useState([go?.lim || 'stop']), [roomClip, setRoomClip] = useState(null);
   // Phòng trống: khoảng ngày dùng chung (đặt ở hạng phòng đầu tiên), số lượng riêng cho từng hạng phòng
   const [clip, setClip] = useState(null), [mode, setMode] = useState('config'), [shut, setShut] = useState({}), [ovF, setOvF] = useState(today), [ovT, setOvT] = useState(addDays(today, 8));
   const std = stdPolicy(db), ovN = Math.min(31, Math.max(1, Math.round((new Date(ovT) - new Date(ovF)) / 864e5) + 1)), ovDays = Array.from({ length: ovN }, (_, i) => addDays(ovF, i));
@@ -233,7 +235,7 @@ export function Bulk() {
   const dowRow = (u, v) => { const bv = dowR[pk(u.k)] ?? [], c = cards.find(x => x.k === u.k); return <div key={u.k} className={`${unitBox(u)} ${DG}`}>
     <div className="min-w-0"><div className="flex flex-wrap items-center gap-2">{!u.f && toggle(c, kids(c))}
       <span className={`inline-grid place-items-center w-5 h-5 rounded text-[11px] font-bold ${u.f ? 'bg-slate-200 text-slate-600' : 'bg-ink text-white'}`}>{u.f ? 'S' : 'B'}</span><span className="font-medium">{u.name}</span>{chanBadge(u.chs)}</div>
-      {u.f && <div className="text-xs text-slate-500 mt-1">{fText(u.f)}</div>}</div>
+      </div>
     {DAYS.map((_, w) => <div key={w}>{u.f ? sCell(sShow(u.f, bv[w])) : numIn(v[w] ?? '', nv => setDowR(o => ({ ...o, [u.k]: Object.assign(Array(7).fill(''), o[u.k], { [w]: nv }) })), '—', true)}</div>)}
     {u.f ? <span /> : <RowTools clip={clip} setClip={setClip} on={Array(7).fill(true)} vals={v} setVals={nv => setDowR(o => ({ ...o, [u.k]: nv }))} />}</div>; };
   const ROOMHEAD = 'flex items-center px-4 py-2.5 bg-mist-200 rounded-t-xl', unitBox = u => `border-t ${u.f ? 'ml-4 border-l-4 border-l-slate-300 bg-slate-50/60' : 'border-slate-200'}`;
@@ -241,7 +243,7 @@ export function Bulk() {
   const unitHead = (u, right) => { const c = cards.find(x => x.k === pk(u.k)); return <div className="flex flex-wrap items-center gap-2 px-4 py-2.5">{!u.f && toggle(c, kids(c))}
     <span className={`inline-grid place-items-center w-5 h-5 rounded text-[11px] font-bold ${u.f ? 'bg-slate-200 text-slate-600' : 'bg-ink text-white'}`}>{u.f ? 'S' : 'B'}</span><span className="font-medium">{u.name}</span>
     {chanBadge(u.chs)}
-    {u.f && <span className="text-xs text-slate-500">{fText(u.f)}</span>}<div className="flex-1" />{right}</div>; };
+    <div className="flex-1" />{right}</div>; };
   const roomsOf = () => rooms.filter(r => cards.some(c => c.r.id === r.id)), unitsOf = r => cards.filter(c => c.r.id === r.id).flatMap(limUnits).filter(u => !u.f || !shutG[pk(u.k)]);
 
   const apply = async () => {
@@ -352,7 +354,7 @@ export function Bulk() {
                 <span className="text-sm text-slate-700 truncate" title={lab}>{lab}</span>
                 {DAYS.map((_, w) => <div key={w} className={chk ? 'text-center' : ''}>{chk ? <input type="checkbox" className="rounded w-4 h-4 border-slate-400 enabled:shadow-sm disabled:bg-slate-200 disabled:border-slate-200 disabled:opacity-40" disabled={!on[w]} checked={!!vals[w]} onChange={e => setL(i, lk, a => Object.assign([...a], { [w]: e.target.checked }))} />
                   : numIn(vals[w], nv => setL(i, lk, a => Object.assign([...a], { [w]: nv })), '—', false, '', !on[w])}</div>)}
-                <RowTools clip={clip} setClip={setClip} on={on} vals={vals} setVals={v => setL(i, lk, () => v)} onDel={li === 0 ? () => C.del(u.k, i) : undefined} /></div>; })}</div>; })}
+                <RowTools clip={clip} setClip={setClip} on={on} vals={vals} setVals={v => setL(i, lk, () => v)} onDel={li === 0 ? () => C.del(u.k, i) : () => setL(i, lk, () => Array(7).fill(''))} /></div>; })}</div>; })}
             <div className="px-4 py-3"><button type="button" className="border border-dashed border-slate-300 rounded-full px-3 py-1 text-xs text-slate-600 hover:border-ink hover:text-ink" onClick={() => C.add(u.k)}>+ Thêm khoảng ngày</button></div></div></div></div>; })}</Card>)
         : <Card><p className="text-center text-slate-400 py-10">Chưa chọn chính sách giá hoặc hạn chế nào.</p></Card>}</div>
       <p className="text-xs text-slate-400 mt-3">Chỉ những ô bạn nhập hoặc tích mới được cập nhật; ô để trống giữ nguyên giá trị hiện có. Giá S theo B cho tới khi bạn chỉnh riêng.</p></>}
