@@ -1,5 +1,4 @@
 import '@fontsource-variable/manrope';
-import '@fontsource-variable/source-serif-4';
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { HashRouter } from 'react-router-dom';

@@ -6,19 +6,10 @@ import { Btn, Title, Card, Tabs, toast } from '../ui.jsx';
 /* Dữ liệu giả để xem giao diện — chưa nối kênh bán / PMS thật */
 const TODAY = '2026-11-19';
 const CH = { CTrip: { name: 'Trip.com', pkg: 'STD - TRIP', mail: 'guest.trip.com' }, BookingCom: { name: 'Booking.com', pkg: 'STD - BOOKING', mail: 'guest.booking.com' }, Agoda: { name: 'Agoda', pkg: 'STD - AGODA', mail: 'guest.agoda.com' } };
-const RAW = [ // mã, kênh, khách, nhận, trả, trạng thái, số phòng, tổng, đặt lúc, đồng bộ
+export const RAW = [ // mã, kênh, khách, nhận, trả, trạng thái, số phòng, tổng, đặt lúc, đồng bộ
   ['CTP-1688902984982093', 'CTrip', 'Jenny Quach', '2026-12-30', '2027-01-05', 'Mới', 1, 11545794, '2026-11-19 06:57', 'Đã nhận'],
   ['CTP-1433816268429971', 'CTrip', 'AMMARA MIKHAYLA BINTI MOHD RAZALI', '2026-12-12', '2026-12-14', 'Đã huỷ', 2, 4618316, '2026-11-18 01:44', 'Đã nhận'],
   ['BDC-5699278455', 'BookingCom', 'Bendang Watisungla', '2026-12-26', '2026-12-29', 'Mới', 1, 6025039, '2026-11-17 19:41', 'Đã nhận'],
-  ['CTP-1433816247023501', 'CTrip', 'Syakirah Aiah', '2026-12-29', '2027-01-02', 'Đã huỷ', 1, 6696560, '2026-11-17 16:13', 'Đã nhận'],
-  ['CTP-1539369346372156', 'CTrip', 'Viktor Iakushenko', '2027-01-04', '2027-01-08', 'Mới', 1, 3966456, '2026-11-16 12:35', 'Đã nhận'],
-  ['BDC-6505787823', 'BookingCom', 'Joan Stewart', '2026-11-17', '2026-11-18', 'Đã huỷ', 1, 805521, '2026-11-16 11:25', 'Đã nhận'],
-  ['AGO-1798180984', 'Agoda', 'Lệ Nguyễn Thị', '2027-01-01', '2027-01-06', 'Mới', 2, 8325176, '2026-11-15 16:31', 'Đã nhận'],
-  ['BDC-6393860481', 'BookingCom', 'Yiğit can Laz', '2026-11-14', '2026-11-15', 'Mới', 1, 805521, '2026-11-14 23:09', 'Đã nhận'],
-  ['CTP-1433816189088919', 'CTrip', 'MUHAMMAD UMAR RAZIN BIN ABDULLAH', '2026-12-16', '2026-12-18', 'Đã sửa', 1, 1897256, '2026-11-14 10:54', 'Đã nhận'],
-  ['BDC-5115692200', 'BookingCom', 'Rahul Vardiyani', '2027-01-22', '2027-01-24', 'Đã huỷ', 1, 2553710, '2026-11-13 16:04', 'Đã nhận'],
-  ['BDC-6488725324', 'BookingCom', 'Yana Solyanik', '2026-12-27', '2026-12-30', 'Mới', 3, 9691128, '2026-11-13 15:53', 'Đã nhận'],
-  ['CTP-1539369262653051', 'CTrip', 'IRINA kilina', '2026-12-30', '2027-01-08', 'Mới', 1, 14200000, '2026-11-13 13:10', 'Chưa nhận'],
 ];
 const nightsOf = (a, b) => Math.round((new Date(b) - new Date(a)) / 864e5);
 const dmy = s => s.slice(0, 10).split('-').reverse().join('/'), dm = s => s.slice(5, 10).split('-').reverse().join('-');

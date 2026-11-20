@@ -12,7 +12,7 @@ export default function Sync() {
   const setMap = (k, v) => chs.patch(cid, { map: { ...ch.map, [k]: v } });
   return <>
     <Title t="Đồng bộ CMS — Kênh bán" sub={<>Cấu hình và liên kết kênh OTA thông qua CMS. <b className="text-ink">{db.channels.filter(c => c.active).length} kênh đang hoạt động</b></>} />
-    <Tabs value={tab} onChange={setTab} items={[['bh', 'Ánh xạ Bellhop'], ['x', 'Ánh xạ']]} />
+    <Tabs value={tab} onChange={setTab} items={[['bh', 'Đồng bộ CMS'], ['x', 'Đồng bộ OTA']]} />
     <div className="flex gap-5">
       <Card className="w-72 shrink-0 self-start">{db.channels.map(c => <button key={c.id} type="button" onClick={() => setCid(c.id)}
         className={`w-full text-left flex gap-3 px-4 py-3 border-b last:border-0 ${c.id === cid ? 'bg-slate-50' : ''}`}><Bell className="w-4 h-4 mt-1 text-slate-400" />

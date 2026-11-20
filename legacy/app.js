@@ -176,7 +176,7 @@ P.sync = () => {
         return row(r.ten_phong_vi, r.ten_phong_vi, p.ten_chinh_sach_gia, `<div class="flex items-center gap-3">${toggle(on, '', '', `onchange="chSave('${cid}',c=>c.map['${k}']=this.checked)"`)}<span class="text-xs text-slate-500">${on ? 'Đang liên kết OTA' : 'Không liên kết'}</span></div>`); }))}`)}</div>` :
     card(`<div class="p-4 border-b font-serif font-bold">Ánh xạ loại phòng & chính sách giá <span class="font-sans font-normal text-slate-500 text-xs ml-2">${ch.name}</span></div>
       ${table(['Loại phòng (Bellhop)', 'Chính sách giá (Bellhop)', 'Mã CMS', 'Trạng thái'], pairs.map(([r, p]) => row(r.ten_phong_vi, r.ten_phong_vi, p.ten_chinh_sach_gia, `<span class="font-mono text-xs text-slate-400">${r.ma_hang_phong}/${p.ma_chinh_sach_gia}</span>`, ch.map[r.id + '|' + p.id] !== false && ch.connected ? `<span class="bg-ink text-white rounded-full px-3 py-0.5 text-xs">Đã kết nối</span>` : `<span class="text-slate-400 text-xs">Chưa kết nối</span>`)))}`, 'flex-1');
-  return title('Đồng bộ CMS — Kênh bán', `Cấu hình và liên kết kênh OTA thông qua CMS. <b class="text-ink">${DB.channels.filter(c => c.active).length} kênh đang hoạt động</b>`) + tabs('sync', [['bh', 'Ánh xạ Bellhop'], ['x', 'Ánh xạ']], 'sync' && 'bh') + `<div class="flex gap-5">${list}${right}</div>`;
+  return title('Đồng bộ CMS — Kênh bán', `Cấu hình và liên kết kênh OTA thông qua CMS. <b class="text-ink">${DB.channels.filter(c => c.active).length} kênh đang hoạt động</b>`) + tabs('sync', [['bh', 'Đồng bộ CMS'], ['x', 'Đồng bộ OTA']], 'sync' && 'bh') + `<div class="flex gap-5">${list}${right}</div>`;
 };
 
 /* Giá thông minh */

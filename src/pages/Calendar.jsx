@@ -1,4 +1,4 @@
-import { Fragment, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronsRight, Copy as CopyIcon, ClipboardPaste, Trash2, Check, Link2, Unlink, ChevronDown, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { useDB, fmChans, DAYS, ymd, addDays, wd, num, money, availOf, basePrice, smartPrice, limitOf, isOpen, stdPolicy, dayOf, mutDay, eachDay } from '../store.jsx';
@@ -49,6 +49,7 @@ function QuickEdit({ ctx, onClose }) {
 /* ---------- Bán phòng ---------- */
 export function Sales() {
   const { db, commit } = useDB(), nav = useNavigate();
+  useEffect(() => { document.documentElement.style.overflow = 'hidden'; return () => { document.documentElement.style.overflow = ''; }; }, []); // trang Bán phòng chỉ cuộn trong bảng
   const [quick, setQuick] = useState(null), [view, setView] = useState('channel'); // 'channel' = kênh → chính sách · 'policy' = chính sách → kênh
   const [from, setFrom] = useState(today), [to, setTo] = useState(addDays(today, 13)), [pend, setPend] = useState({}), [shut, setShut] = useState({});
   const flip = k => setShut(o => ({ ...o, [k]: !o[k] })), Chev = ({ k }) => (shut[k] ? <ChevronRight className="inline w-3.5 h-3.5 -ml-1 mr-1" /> : <ChevronDown className="inline w-3.5 h-3.5 -ml-1 mr-1" />);
@@ -69,7 +70,7 @@ export function Sales() {
     className={`block w-full h-10 !p-0 text-center text-sm !border-0 !rounded-none bg-transparent text-sm !shadow-none hover:bg-white/70 focus:bg-white focus:!ring-1 focus:!ring-brand ${cls}`} />; };
   const openOf = (r, d, cid, pid) => val(`${r.id}|${d}|s|${pid}@${cid}`, isOpen(db, r, d, cid, pid));
   const priceTds = (r, p, f, cid) => days.map(d => { const open = openOf(r, d, cid, p.id);
-    return <td key={d} className={`${TD} font-semibold ${open ? tint(r, d) : 'bg-red-200'}`}>{show.includes('price') && (f
+    return <td key={d} title={open ? undefined : 'Ngừng bán'} className={`${TD} font-semibold ${open ? tint(r, d) : 'bg-red-200'}`}>{show.includes('price') && (f
       ? <span title="Giá thông minh — tự tính từ B, không chỉnh sửa" className={`block leading-10 cursor-default ${open ? '' : 'text-red-800'}`}>{money(smartPrice(db, f, r, d, cid, p.id))}</span>
       : <button type="button" title="Bấm để chỉnh sửa" onClick={() => setQuick({ r, p, cid, d })} className={`block w-full h-10 font-semibold hover:bg-white/70 hover:ring-1 hover:ring-inset hover:ring-ink/30 ${open ? '' : 'text-red-800'}`}>{money(basePrice(db, r, d, cid))}</button>)}</td>; });
   const extraTds = (r, p, cid, k, type) => days.map(d => {
@@ -90,7 +91,7 @@ export function Sales() {
     await commit('cal', cal); setPend({}); toast(`Đã lưu ${keys.length} thay đổi`);
   };
   const ch = view === 'channel', lead = ch ? 410 : 340;
-  return <div className="h-[calc(100vh-64px)] flex flex-col">
+  return <div className="h-[calc(100vh-125px)] flex flex-col">
     <div className="flex items-center gap-3 mb-3 flex-wrap"><Seg value={view} onChange={setView} items={[["channel", "Theo kênh"], ["policy", "Theo chính sách giá"]]} /><span className="w-px h-6 bg-slate-200 mx-1" />
       <Btn kind="ghost" onClick={() => shift(-1)}><ChevronLeft className="w-4 h-4" /></Btn>
       <input type="date" className="field !w-40 !py-2" value={from} onChange={e => { if (!e.target.value) return; setFrom(e.target.value); if (to < e.target.value) setTo(addDays(e.target.value, 13)); }} />
@@ -109,17 +110,17 @@ export function Sales() {
       <colgroup>{ch ? <><col style={{ width: 170 }} /><col style={{ width: 240 }} /></> : <col style={{ width: 340 }} />}{days.map(d => <col key={d} style={{ width: 100 }} />)}</colgroup>
       <thead><tr className="text-sm text-slate-500">
         <th colSpan={ch ? 2 : 1} className="h-14 px-3 text-left font-medium sticky left-0 top-0 z-40 bg-white">{ch ? 'KÊNH / CHỈ SỐ' : 'LOẠI PHÒNG / CHỈ SỐ'}</th>
-        {days.map(d => <th key={d} className={`font-medium sticky top-0 z-30 ${d === today ? 'bg-cyan-100 text-brand-dark' : wd(d) > 4 ? 'bg-amber-100 text-amber-700' : 'bg-white'}`}>{DAYS[wd(d)]}<div className={`text-base font-semibold ${wd(d) > 4 ? '' : 'text-ink'}`}>{+d.slice(8)}</div></th>)}</tr></thead>
+        {days.map(d => <th key={d} title={d === today ? 'Hôm nay' : wd(d) > 4 ? 'Thứ 7, CN' : undefined} className={`font-medium sticky top-0 z-30 ${d === today ? 'bg-cyan-100 text-brand-dark' : wd(d) > 4 ? 'bg-amber-100 text-amber-700' : 'bg-white'}`}>{DAYS[wd(d)]}<div className={`text-base font-semibold ${wd(d) > 4 ? '' : 'text-ink'}`}>{+d.slice(8)}</div></th>)}</tr></thead>
       <tbody className="text-sm">{rooms.map(r => <Fragment key={r.id}>
         <tr className="sticky top-[52px] z-20 border-t-2 border-slate-300 bg-white shadow-[0_1px_0_#cbd5e1]"><td colSpan={ch ? 2 : 1} className={`${LBL} bg-white cursor-pointer select-none`} onClick={() => flip(r.id)}><Chev k={r.id} /><b className="text-ink text-[15px]">{r.ten_phong_vi}</b> <span className="text-slate-500">· {r.so_luong_phong} phòng</span></td>
-          {days.map(d => { const a = availOf(db, r, d), k = `${r.id}|${d}|a`; return <td key={d} className={`${TD} `}>{cell(k, a, sold(r, d) ? 'text-red-700 font-bold' : 'font-semibold')}</td>; })}</tr>
+          {days.map(d => { const a = availOf(db, r, d), k = `${r.id}|${d}|a`; return <td key={d} title={sold(r, d) ? 'Hết phòng' : undefined} className={`${TD} `}>{cell(k, a, sold(r, d) ? 'text-red-700 font-bold' : 'font-semibold')}</td>; })}</tr>
         {!shut[r.id] && ch && db.channels.filter(c => cf.includes(c.id)).map(c => { const gs = groups.filter(g => g.chans.includes(c.id)), rows = gs.length * (1 + extras.length);
           return gs.map(({ p, f }, gi) => <Fragment key={c.id + p.id}>
             <tr className={gi === 0 ? 'border-t border-slate-300' : 'border-t border-slate-100'}>
               {gi === 0 && <td rowSpan={rows} className="sticky left-0 z-10 bg-white align-top px-3 py-2 border-r border-slate-200"><div className="flex items-center gap-1.5"><b className="text-[15px] text-slate-800">{c.name}</b><span title={c.connected ? 'Đã kết nối' : 'Chưa kết nối'} className="shrink-0">{c.connected ? <Link2 className="w-4 h-4 text-brand-dark" /> : <Unlink className="w-4 h-4 text-slate-300" />}</span></div></td>}
-              <td style={{ left: 170 }} className="h-10 px-3 sticky z-10 bg-white whitespace-nowrap overflow-hidden text-ellipsis border-r border-slate-100">{badge(f)}<span className="font-medium">Giá bán</span> <span className="text-slate-400">· {p.ten_chinh_sach_gia}</span></td>
+              <td style={{ left: 169 }} className="h-10 px-3 sticky z-10 bg-white whitespace-nowrap overflow-hidden text-ellipsis border-r border-slate-100">{badge(f)}<span className="font-medium">Giá bán</span> <span className="text-slate-400">· {p.ten_chinh_sach_gia}</span></td>
               {priceTds(r, p, f, c.id)}</tr>
-            {extras.map(([k, label, type]) => <tr key={k} className="border-t border-slate-100"><td style={{ left: 170 }} className="h-10 px-3 sticky z-10 bg-white text-slate-600 whitespace-nowrap border-r border-slate-100">{label}</td>{extraTds(r, p, c.id, k, type)}</tr>)}
+            {extras.map(([k, label, type]) => <tr key={k} className="border-t border-slate-100"><td style={{ left: 169 }} className="h-10 px-3 sticky z-10 bg-white text-slate-600 whitespace-nowrap border-r border-slate-100">{label}</td>{extraTds(r, p, c.id, k, type)}</tr>)}
           </Fragment>); })}
         {!shut[r.id] && !ch && groups.map(({ p, f, chans }, gi) => { const c = PAL[gi % PAL.length]; return <Fragment key={p.id}>
           <tr className={`border-t border-slate-200 ${c.bg}`}><td className={`${LBL} ${c.bg} border-l-4 ${c.bar} ${c.text} font-bold cursor-pointer select-none`} onClick={() => flip(r.id + p.id)}><Chev k={r.id + p.id} />{p.ten_chinh_sach_gia} <span className={`ml-1.5 px-1.5 rounded text-white text-[11px] ${f ? 'bg-slate-500' : 'bg-ink'}`} title={f ? 'Giá thông minh: tính từ B' : 'Giá gốc'}>{f ? 'S' : 'B'}</span></td>
@@ -129,8 +130,7 @@ export function Sales() {
             {extras.map(([k, label, type]) => <tr key={k} className="border-t border-slate-100"><td className={`${LBL} bg-white border-l-4 ${c.bar} pl-10 text-slate-500`}>└ {label}</td>{extraTds(r, p, cid, k, type)}</tr>)}
           </Fragment>)}
         </Fragment>; })}
-      </Fragment>)}</tbody></table></div>
-      <div className="flex flex-wrap items-center gap-x-5 gap-y-1 px-4 py-2.5 text-xs text-slate-500 border-t"><span className="inline-flex items-center gap-1.5"><b className="px-1.5 rounded text-white text-[10px] bg-ink">B</b>Giá gốc</span><span className="inline-flex items-center gap-1.5"><b className="px-1.5 rounded text-white text-[10px] bg-slate-500">S</b>Giá thông minh</span><span className="inline-flex items-center gap-1.5"><Check className="w-3.5 h-3.5 text-emerald-500" />Mở bán</span><span className="inline-flex items-center gap-1.5"><X className="w-3.5 h-3.5 text-red-500" />Ngừng bán</span><span className="inline-flex items-center gap-1.5"><i className="w-3 h-3 rounded-sm bg-red-200" />Hết phòng / ngừng bán</span><span className="inline-flex items-center gap-1.5"><i className="w-3 h-3 rounded-sm bg-amber-100" />Thứ 7, CN</span><span className="inline-flex items-center gap-1.5"><i className="w-3 h-3 rounded-sm bg-cyan-100" />Hôm nay</span><span className="ml-auto text-slate-400">Bấm giá B để chỉnh nhanh (S tự tính) · bấm tên phòng để thu gọn</span></div></Card>
+      </Fragment>)}</tbody></table></div></Card>
     {quick && <QuickEdit ctx={quick} onClose={() => setQuick(null)} />}
   </div>;
 }

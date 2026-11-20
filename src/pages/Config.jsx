@@ -167,7 +167,7 @@ function RoomEditor({ id }) {
 export function Policies() {
   const pc = useCrud('policies'), nav = useNavigate(), [q, setQ] = useState('all'), [s, setS] = useState('');
   const list = pc.list.filter(p => (q === 'all' || (q === 'on') === !!p.kich_hoat) && (p.ma_chinh_sach_gia + p.ten_chinh_sach_gia).toLowerCase().includes(s.toLowerCase()));
-  return <div className="cfg"><Title t="Chính sách giá" sub="Định nghĩa chính sách giá theo bữa ăn, thời gian áp dụng, đại lý và phân khúc thị trường; gắn cho từng hạng phòng." />
+  return <div className="cfg"><Title t="Chính sách giá OTA" sub="Định nghĩa chính sách giá theo bữa ăn, thời gian áp dụng, đại lý và phân khúc thị trường; gắn cho từng hạng phòng." />
     <div className="flex items-center gap-3 mb-4"><SearchBox value={s} onChange={setS} ph="Tìm mã/tên chính sách..." /><Seg value={q} onChange={setQ} items={[['all', 'Tất cả'], ['on', 'Đang hoạt động'], ['off', 'Ngưng hoạt động']]} /><div className="flex-1" />
       <Btn onClick={() => nav('/policies/new')}>+ Thêm mới chính sách giá</Btn></div>
     <Card><Table head={['STT', 'Mã chính sách giá', 'Tên chính sách giá', 'Bữa ăn', 'Thời gian áp dụng', 'Trạng thái', 'Thao tác']} rows={list.map((p, i) => ({ key: p.id, cells: [i + 1, <span>{p.ma_chinh_sach_gia}</span>, <b>{p.ten_chinh_sach_gia}</b>,
