@@ -103,9 +103,9 @@ export const RowActions = ({ onEdit, onDel, extra }) => <div className="flex gap
 
 /* Multi-select dropdown: label shows "Tất cả N" when everything is ticked */
 export function MultiSelect({ label, opts, value, onChange, className = '', inline }) {
-  const [open, setOpen] = useState(false), [q, setQ] = useState(''), [rt, setRt] = useState(false), ref = useRef(null);
-  useEffect(() => { // close on outside click
-    const h = e => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+  const narrow = useNarrow(), [open, setOpen] = useState(false), [q, setQ] = useState(''), [rt, setRt] = useState(false), ref = useRef(null);
+  useEffect(() => { // close on outside click (desktop dropdown)
+    const h = e => { if (!window.matchMedia('(max-width:767px)').matches && ref.current && !ref.current.contains(e.target)) setOpen(false); };
     document.addEventListener('mousedown', h); return () => document.removeEventListener('mousedown', h);
   }, []);
   const all = value.length === opts.length;
@@ -113,9 +113,56 @@ export function MultiSelect({ label, opts, value, onChange, className = '', inli
   const toggle = v => onChange(value.includes(v) ? value.filter(x => x !== v) : [...value, v]);
   return <div ref={ref} className={`relative ${className}`}>{!inline && <span className="lbl">{label}</span>}
     <button type="button" onClick={() => { setRt(ref.current.getBoundingClientRect().left + 264 > window.innerWidth); setOpen(o => !o); }} className={`field flex justify-between items-center gap-2 text-left ${inline ? "!py-2" : ""}`}><span className="truncate">{inline && <span className="text-slate-400">{label}: </span>}{text}</span><ChevronDown className={`w-4 h-4 shrink-0 text-slate-400 transition-transform ${open ? 'rotate-180' : ''}`} /></button>
-    {open && <div className={`absolute z-50 mt-1 w-full max-md:w-64 ${rt ? 'max-md:right-0' : ''} bg-white border border-slate-200 rounded-xl shadow-xl anim-drop p-2 max-h-64 overflow-y-auto`}>
+    {open && narrow && createPortal(<><div className="fixed inset-0 bg-black/40 z-[60] anim-fade" onClick={() => setOpen(false)} />
+      <div className="fixed inset-x-0 bottom-0 z-[61] max-h-[80vh] flex flex-col rounded-t-2xl bg-white p-3 pb-5 shadow-2xl anim-rise"><div className="mx-auto mb-2 h-1 w-10 rounded-full bg-slate-200 shrink-0" /><div className="px-2 pb-2 font-semibold text-ink shrink-0">{label}</div>
+        <div className="relative mb-2 shrink-0"><Search className="w-4 h-4 absolute left-3 top-3.5 text-slate-400" /><input className="field !pl-9" placeholder="Tìm kiếm" value={q} onChange={e => setQ(e.target.value)} /></div>
+        <div className="flex gap-3 px-2 pb-2 mb-1 border-b text-sm shrink-0"><button type="button" className="text-brand-dark font-medium" onClick={() => onChange(opts.map(o => o[0]))}>Chọn tất cả</button><span className="text-slate-300">|</span><button type="button" className="text-slate-500" onClick={() => onChange([])}>Xóa</button></div>
+        <div className="overflow-y-auto min-h-0">{opts.filter(([, l]) => l.toLowerCase().includes(q.toLowerCase())).map(([v, l]) => <label key={v} className="flex items-center gap-3 px-2 py-3 rounded-lg active:bg-slate-50"><input type="checkbox" className="rounded w-5 h-5" checked={value.includes(v)} onChange={() => toggle(v)} />{l}</label>)}</div>
+        <Btn className="mt-3 w-full shrink-0" onClick={() => setOpen(false)}>Xong</Btn></div></>, document.body)}
+    {open && !narrow && <div className={`absolute z-50 mt-1 w-full max-md:w-64 ${rt ? 'max-md:right-0' : ''} bg-white border border-slate-200 rounded-xl shadow-xl anim-drop p-2 max-h-64 overflow-y-auto`}>
       <input className="field !py-1.5 mb-2" placeholder="Tìm kiếm" value={q} onChange={e => setQ(e.target.value)} />
       <div className="flex gap-3 px-2 pb-2 mb-1 border-b text-sm"><button type="button" className="text-brand" onClick={() => onChange(opts.map(o => o[0]))}>Chọn tất cả</button><span className="text-slate-300">|</span><button type="button" className="text-slate-400" onClick={() => onChange([])}>Xóa</button></div>
       {opts.filter(([, l]) => l.toLowerCase().includes(q.toLowerCase())).map(([v, l]) => <label key={v} className="flex items-center gap-2 px-2 py-1.5 hover:bg-slate-50 rounded"><input type="checkbox" className="rounded" checked={value.includes(v)} onChange={() => toggle(v)} />{l}</label>)}
     </div>}</div>;
+}
+
+/* Lịch chọn ngày cho điện thoại: chặn bảng lịch mặc định của trình duyệt (tràn khung) và mở bảng trượt từ đáy */
+const iso = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+export function MobileDatePicker() {
+  const [st, setSt] = useState(null), [mo, setMo] = useState(new Date());
+  useEffect(() => {
+    const h = e => { const el = e.target; if (!(el instanceof HTMLInputElement) || el.type !== 'date' || el.disabled || el.readOnly || !window.matchMedia('(max-width:767px)').matches) return;
+      e.preventDefault(); e.stopPropagation(); el.blur(); const v = el.value ? new Date(el.value + 'T00:00:00') : new Date(); setMo(new Date(v.getFullYear(), v.getMonth(), 1)); setSt({ el, v: el.value, min: el.min, max: el.max }); };
+    document.addEventListener('click', h, true); return () => document.removeEventListener('click', h, true);
+  }, []);
+  if (!st) return null;
+  const y = mo.getFullYear(), m = mo.getMonth(), lead = (new Date(y, m, 1).getDay() + 6) % 7, days = new Date(y, m + 1, 0).getDate(), today = iso(new Date());
+  const cells = [...Array(lead).fill(null), ...Array.from({ length: days }, (_, i) => iso(new Date(y, m, i + 1)))];
+  const set = v => { const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set; setter.call(st.el, v); st.el.dispatchEvent(new Event('input', { bubbles: true })); setSt(null); };
+  const bad = d => (st.min && d < st.min) || (st.max && d > st.max);
+  return createPortal(<><div className="fixed inset-0 bg-black/40 z-[60] anim-fade" onClick={() => setSt(null)} />
+    <div className="fixed inset-x-0 bottom-0 z-[61] rounded-t-2xl bg-white p-4 pb-5 shadow-2xl anim-rise"><div className="mx-auto mb-3 h-1 w-10 rounded-full bg-slate-200" />
+      <div className="flex items-center justify-between mb-3"><button type="button" className="w-10 h-10 grid place-items-center rounded-lg border" onClick={() => setMo(new Date(y, m - 1, 1))}><ChevronLeft className="w-4 h-4" /></button><b className="text-ink">Tháng {m + 1}, {y}</b><button type="button" className="w-10 h-10 grid place-items-center rounded-lg border" onClick={() => setMo(new Date(y, m + 1, 1))}><ChevronRight className="w-4 h-4" /></button></div>
+      <div className="grid grid-cols-[repeat(7,minmax(0,1fr))] text-center text-xs text-slate-400 mb-1">{['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'].map(d => <span key={d} className="py-1">{d}</span>)}</div>
+      <div className="grid grid-cols-[repeat(7,minmax(0,1fr))] gap-y-1">{cells.map((d, i) => d ? <button key={d} type="button" disabled={bad(d)} onClick={() => set(d)} className={`h-10 rounded-lg text-sm ${d === st.v ? 'bg-ink text-white font-semibold' : d === today ? 'border border-brand text-brand-dark' : 'text-slate-700'} disabled:text-slate-300`}>{+d.slice(8)}</button> : <span key={'e' + i} />)}</div>
+      <div className="flex gap-2 mt-4 [&>button]:flex-1"><Btn kind="ghost" onClick={() => setSt(null)}>Huỷ</Btn><Btn disabled={bad(today)} onClick={() => set(today)}>Hôm nay</Btn></div></div></>, document.body);
+}
+
+/* Mọi <select> thường trên điện thoại: chặn danh sách mặc định của trình duyệt, mở bảng trượt từ đáy (đồng bộ với Select/MultiSelect) */
+export function MobileSelectSheet() {
+  const [st, setSt] = useState(null);
+  useEffect(() => {
+    const h = e => { const el = e.target; if (!(el instanceof HTMLSelectElement) || el.multiple || el.disabled || !window.matchMedia('(max-width:767px)').matches) return;
+      e.preventDefault(); e.stopPropagation(); el.blur();
+      if (e.type === 'click') return;
+      const lbl = el.closest('label, div')?.querySelector('.lbl, span.block, span');
+      setSt({ el, title: (lbl?.textContent || '').replace(/\s*\*\s*$/, '').trim().slice(0, 60), opts: [...el.options].map(o => ({ v: o.value, t: o.textContent, d: o.disabled })), v: el.value }); };
+    document.addEventListener('mousedown', h, true); document.addEventListener('click', h, true);
+    return () => { document.removeEventListener('mousedown', h, true); document.removeEventListener('click', h, true); };
+  }, []);
+  if (!st) return null;
+  const pick = v => { Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value').set.call(st.el, v); st.el.dispatchEvent(new Event('change', { bubbles: true })); setSt(null); };
+  return createPortal(<><div className="fixed inset-0 bg-black/40 z-[60] anim-fade" onClick={() => setSt(null)} />
+    <div className="fixed inset-x-0 bottom-0 z-[61] max-h-[70vh] overflow-y-auto rounded-t-2xl bg-white p-3 pb-6 shadow-2xl anim-rise"><div className="mx-auto mb-2 h-1 w-10 rounded-full bg-slate-200" />{st.title && <div className="px-3 pb-2 text-sm font-semibold text-ink">{st.title}</div>}
+      {st.opts.map(o => { const on = o.v === st.v; return <button key={o.v} type="button" disabled={o.d} onClick={() => pick(o.v)} className={`w-full flex items-center justify-between gap-3 px-3 py-3 rounded-xl text-[15px] text-left disabled:opacity-40 ${on ? 'bg-brand/10 text-brand-dark font-semibold' : 'text-slate-700'}`}><span>{o.t}</span>{on && <span>✓</span>}</button>; })}</div></>, document.body);
 }

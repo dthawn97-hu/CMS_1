@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, NavLink, Route, Routes, Navigate, useLocation } from 'react-router-dom';
 import { CalendarCheck, LayoutGrid, Users, BedDouble, UtensilsCrossed, ShoppingCart, ClipboardList, BarChart3, LayoutDashboard, Briefcase, Wallet, SlidersHorizontal, Package, PanelLeft, Bell, LogOut, UserRound, BellRing, Building2, CalendarDays, ChevronDown, ChevronRight, Inbox, Link2, TrendingUp } from 'lucide-react';
 import { DBProvider, useDB } from './store.jsx';
-import { Toaster, ask, toast } from './ui.jsx';
+import { Toaster, MobileDatePicker, MobileSelectSheet, ask, toast } from './ui.jsx';
 import { Sales, Bulk } from './pages/Calendar.jsx';
 import Sync from './pages/Sync.jsx';
 import Booking from './pages/Booking.jsx';
@@ -106,6 +106,6 @@ export default function App() {
         <Route path="/policies" element={<Policies />} /><Route path="/policies/new" element={<PolicyForm />} /><Route path="/policies/edit/:id" element={<PolicyForm />} />
         <Route path="*" element={<Navigate to="/overview" replace />} />
       </Routes></div></main></div></div>
-    <Toaster />
+    <Toaster /><MobileDatePicker /><MobileSelectSheet />
   </DBProvider>;
 }
