@@ -41,21 +41,30 @@ export default function Booking() {
     const csv = '﻿' + [head, ...rows].map(r => r.map(x => `"${String(x).replace(/"/g, '""')}"`).join(',')).join('\n');
     const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' })); a.download = 'dat-phong.csv'; a.click(); toast(`Đã xuất ${rows.length} đơn`);
   };
-  const lbl = 'text-[11px] font-semibold tracking-wide text-slate-400 uppercase mb-1.5';
+  const REP = [
+  ['MÃ KHÁCH SẠN', (b, h) => h.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/gi, 'd').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'hotel'], ['TÊN KHÁCH SẠN', (b, h) => h], ['MÃ BOOKING', b => <>{b.code} <Copy className="inline w-3.5 h-3.5 text-slate-400" /></>],
+  ['TÊN KHÁCH', b => <b className="font-semibold">{b.guest.length > 24 ? b.guest.slice(0, 24) + '…' : b.guest}</b>], ['KÊNH OTA', b => <Chan c={b.ch} />],
+  ['NGÀY ĐẶT', b => <>{dmy(b.at)}<div className="text-xs text-slate-400">{b.at.slice(11)}</div></>], ['NHẬN PHÒNG', b => dmy(b.ci)], ['TRẢ PHÒNG', b => dmy(b.co)],
+  ['STAYDATE', b => b.nights > 1 ? `${dm(b.ci)} → ${dm(addDays(b.co, -1))}` : dm(b.ci)], ['SỐ ĐÊM', b => b.nights, 'r'], ['ROOMQUANTITY', b => b.n, 'r'], ['LOẠI PHÒNG', b => b.rooms[0].hang + (b.n > 1 ? ` +${b.n - 1}` : '')],
+  ['TỔNG TIỀN (VND)', b => <b className="font-semibold">{money(b.total)} ₫</b>, 'r'], ['GIÁ TỪNG ĐÊM', () => <span className="text-slate-300">—</span>],
+  ...['TIỀN CỌC', 'GIÁ TRƯỚC THUẾ', 'TỔNG SAU THUẾ', 'THUẾ', 'KHÁCH TRẢ', 'HOA HỒNG OTA', 'THỰC NHẬN', 'SỐ TIỀN THU', 'KHOẢN KHÁC'].map(h => [h, () => <span className="text-slate-300">NA</span>, 'r']),
+  ['TRẠNG THÁI', b => <Stat s={b.status} />], ['GHI CHÚ LỖI', () => <span className="text-slate-300">—</span>]];
+const lbl = 'text-[11px] font-semibold tracking-wide text-slate-400 uppercase mb-1.5';
   const chOn = [...new Set(all.map(b => b.ch))], chOther = db.channels.map(c => c.name).filter(n => !chOn.some(c => CH[c].name === n));
   return <>
     <Title t="Danh sách đặt phòng" sub="Quản lý danh sách khách đã đặt phòng từ tất cả các kênh bán." />
     <Tabs value={tab} onChange={setTab} items={[['list', 'Danh sách đặt phòng'], ['report', 'Báo cáo đặt phòng']]} />
-    <Card className="p-5">
+    <Card className="p-3 md:p-5">
       <div className="relative flex items-center gap-3 mb-4">
         <div className="relative flex-1 max-w-md"><Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" /><input className="field !pl-10" placeholder="Nhập mã đặt phòng OTA" value={q} onChange={e => setQ(e.target.value)} /></div>
         <Btn kind="ghost" onClick={() => { setDraft(f); setOpen(o => !o); }}><Filter className="w-4 h-4 inline mr-1.5 -mt-0.5" />Bộ lọc</Btn>
-        <Btn kind="ghost" onClick={exportCsv}><Download className="w-4 h-4 inline mr-1.5 -mt-0.5" />Xuất Excel</Btn>
-        {open && <div className="absolute z-30 left-0 top-full mt-2 w-[660px] bg-white border border-slate-200 rounded-xl shadow-2xl p-5">
+        {tab === 'report' && <Btn kind="ghost" onClick={exportCsv}><Download className="w-4 h-4 inline mr-1.5 -mt-0.5" />Xuất Excel</Btn>}
+        {open && <><div className="md:hidden fixed inset-0 z-40 bg-slate-900/40" onClick={() => setOpen(false)} /><div className="absolute z-30 left-0 top-full mt-2 w-[660px] max-w-[calc(100vw-2rem)] max-h-[calc(100vh-290px)] min-h-[320px] flex flex-col bg-white border border-slate-200 rounded-xl shadow-2xl max-md:fixed max-md:z-50 max-md:inset-x-0 max-md:bottom-0 max-md:top-auto max-md:mt-0 max-md:w-auto max-md:max-w-none max-md:min-h-0 max-md:max-h-[88dvh] max-md:rounded-b-none">
+          <div className="overflow-y-auto overflow-x-hidden min-h-0 p-5 pb-1">
           <div className={lbl}>Lọc theo ngày</div>
-          <div className="flex items-center gap-2 mb-2"><select className="field pr-9 !w-44" value={draft.dateType} onChange={e => setDraft({ ...draft, dateType: e.target.value })}><option value="ci">Nhận phòng</option><option value="co">Trả phòng</option><option value="at">Ngày đặt</option></select>
-            <input type="date" className="field" value={draft.from} onChange={e => setDraft({ ...draft, from: e.target.value })} /><span className="text-slate-400">→</span><input type="date" className="field" value={draft.to} min={draft.from} onChange={e => setDraft({ ...draft, to: e.target.value })} /></div>
-          <div className="flex gap-2 mb-4">{[['Hôm nay', TODAY, TODAY], ['Ngày mai', addDays(TODAY, 1), addDays(TODAY, 1)], ['7 ngày tới', TODAY, addDays(TODAY, 6)], ['Tháng này', '2026-11-01', '2026-11-30']].map(([t, a, b]) => <button key={t} type="button" className="px-2.5 py-1 text-xs rounded border border-slate-200 text-slate-600 hover:border-ink" onClick={() => quick(a, b)}>{t}</button>)}</div>
+          <div className="flex items-center gap-2 mb-2 max-md:grid max-md:grid-cols-2 max-md:gap-3"><select className="field pr-9 !w-44 max-md:!w-full max-md:col-span-2" value={draft.dateType} onChange={e => setDraft({ ...draft, dateType: e.target.value })}><option value="ci">Nhận phòng</option><option value="co">Trả phòng</option><option value="at">Ngày đặt</option></select>
+            <input type="date" className="field max-md:min-w-0" value={draft.from} onChange={e => setDraft({ ...draft, from: e.target.value })} /><span className="text-slate-400 max-md:hidden">→</span><input type="date" className="field max-md:min-w-0" value={draft.to} min={draft.from} onChange={e => setDraft({ ...draft, to: e.target.value })} /></div>
+          <div className="flex gap-2 mb-4 max-md:grid max-md:grid-cols-4">{[['Hôm nay', TODAY, TODAY], ['Ngày mai', addDays(TODAY, 1), addDays(TODAY, 1)], ['7 ngày tới', TODAY, addDays(TODAY, 6)], ['Tháng này', '2026-11-01', '2026-11-30']].map(([t, a, b]) => <button key={t} type="button" className="px-2.5 max-md:px-1 py-1.5 text-xs rounded border border-slate-200 text-slate-600 hover:border-ink" onClick={() => quick(a, b)}>{t}</button>)}</div>
           <div className={lbl}>Kênh bán</div>
           <div className="border border-slate-200 rounded-lg p-3 mb-4 max-h-44 overflow-y-auto"><div className="text-[11px] text-slate-400 mb-1">KÊNH ĐÃ CÓ ĐƠN</div>
             <div className="grid grid-cols-2 gap-1 mb-2">{chOn.map(c => <label key={c} className="flex items-center gap-2 text-sm"><input type="checkbox" className="rounded" checked={draft.channels.includes(c)} onChange={e => setDraft({ ...draft, channels: e.target.checked ? [...draft.channels, c] : draft.channels.filter(x => x !== c) })} />{CH[c].name}</label>)}</div>
@@ -63,10 +72,17 @@ export default function Booking() {
           <div className="grid grid-cols-2 gap-3 mb-4"><div><div className={lbl}>Trạng thái đặt phòng</div><select className="field" value={draft.status} onChange={e => setDraft({ ...draft, status: e.target.value })}><option value="">Tất cả trạng thái</option><option>Mới</option><option>Đã sửa</option><option>Đã huỷ</option></select></div>
             <div><div className={lbl}>Trạng thái đồng bộ</div><select className="field" value={draft.sync} onChange={e => setDraft({ ...draft, sync: e.target.value })}><option value="">Tất cả đồng bộ</option><option>Đã nhận</option><option>Chưa nhận</option></select></div></div>
           <div className={lbl}>Tìm kiếm theo</div>
-          <div className="flex gap-2 mb-4"><select className="field pr-9 !w-44" value={draft.by} onChange={e => setDraft({ ...draft, by: e.target.value })}><option value="name">Tên khách</option><option value="code">Mã đặt phòng</option></select><input className="field" placeholder={draft.by === 'name' ? 'Tên khách' : 'Mã đặt phòng'} value={draft.kw} onChange={e => setDraft({ ...draft, kw: e.target.value })} /></div>
-          <div className="flex justify-between items-center border-t pt-3"><button type="button" className="text-sm font-medium" onClick={reset}>Đặt lại</button><Btn onClick={apply}>Tìm kiếm</Btn></div></div>}
+          <div className="flex gap-2 mb-4 max-md:grid max-md:grid-cols-2 max-md:gap-3"><select className="field pr-9 !w-44 max-md:!w-full shrink-0" value={draft.by} onChange={e => setDraft({ ...draft, by: e.target.value })}><option value="name">Tên khách</option><option value="code">Mã đặt phòng</option></select><input className="field min-w-0" placeholder={draft.by === 'name' ? 'Tên khách' : 'Mã đặt phòng'} value={draft.kw} onChange={e => setDraft({ ...draft, kw: e.target.value })} /></div>
+          </div><div className="flex justify-between items-center border-t px-5 py-3"><button type="button" className="text-sm font-medium" onClick={reset}>Đặt lại</button><Btn onClick={apply}>Tìm kiếm</Btn></div></div></>}
       </div>
-      {tab === 'list' ? <div className="overflow-x-auto"><div className="min-w-[900px]">
+      {tab === 'list' ? <><div className="md:hidden space-y-3">{list.map(b => { const x = b.status === 'Đã huỷ'; return <div key={b.code} onClick={() => setSel(b)} className={`relative rounded-2xl border bg-white p-4 shadow-sm overflow-hidden ${x ? 'border-red-200' : 'border-slate-200'}`}>
+          {x && <span className="absolute left-0 top-0 bottom-0 w-1 bg-red-400" />}
+          <div className="flex items-center gap-2 flex-wrap"><Chan c={b.ch} />{b.n > 1 && <span className="px-2 py-0.5 rounded bg-blue-50 text-blue-700 text-xs">{b.n} phòng</span>}<span className="text-xs text-slate-400 font-mono">{short(b.code)}</span><span className="ml-auto"><Stat s={b.status} /></span></div>
+          <div className="border-t border-slate-100 my-3" />
+          <div className="flex justify-between items-end gap-3"><div className="min-w-0"><b className="block truncate text-base text-ink">{b.guest}</b><div className="text-xs text-slate-500 mt-0.5">Đặt lúc: {b.at.slice(11)} · {dmy(b.at)}</div></div><div className="text-right shrink-0"><div className="text-[10px] uppercase tracking-wide text-slate-400">{b.n > 1 ? 'Tổng đơn' : 'Tổng cộng'}</div><div className={`font-bold ${x ? 'line-through text-slate-300' : 'text-brand-dark'}`}>{money(b.total)} ₫</div></div></div>
+          <div className={`mt-3 rounded-xl px-3 py-2.5 flex items-center justify-between ${x ? 'bg-red-50/60' : 'bg-slate-50'}`}><div><div className="text-[11px] text-slate-400">Lưu trú</div><div className="text-sm font-medium">{dm(b.ci)} → {dmy(b.co)}</div></div><span className={`px-2.5 py-1 rounded-lg border bg-white text-xs font-medium ${x ? 'text-red-600 border-red-200' : ''}`}>{b.nights} đêm</span></div></div>; })}
+        {!list.length && <p className="text-center text-slate-400 py-12">Không có đặt phòng phù hợp</p>}</div>
+      <div className="max-md:hidden overflow-x-auto"><div className="min-w-[900px]">
         <div className="grid grid-cols-[1fr_210px_150px_110px_120px] gap-3 px-4 py-3 bg-slate-50 rounded-lg text-[11px] font-semibold tracking-wide text-slate-500"><span>KHÁCH</span><span>LƯU TRÚ</span><span className="text-right">TỔNG CỘNG</span><span>TRẠNG THÁI</span><span>ĐẶT LÚC</span></div>
         {list.length ? list.map(b => <div key={b.code} onClick={() => setSel(b)} className="grid grid-cols-[1fr_210px_150px_110px_120px] gap-3 px-4 py-3 border-b border-slate-100 items-center cursor-pointer hover:bg-slate-50">
           <div className="min-w-0"><div className="flex items-center gap-2"><b className="font-medium truncate">{b.guest}</b>{b.n > 1 && <span className="shrink-0 px-2 py-0.5 rounded bg-blue-50 text-blue-700 text-xs">{b.n} phòng</span>}</div>
@@ -74,13 +90,9 @@ export default function Booking() {
           <div><div>{dm(b.ci)} → {dmy(b.co)}</div><div className="text-xs text-slate-400">{b.nights} đêm</div></div>
           <div className="text-right"><div className="font-semibold">{money(b.total)} ₫</div>{b.n > 1 && <div className="text-[11px] text-slate-400">tổng đơn</div>}</div>
           <div><Stat s={b.status} /></div><div className="text-sm"><div>{b.at.slice(11)}</div><div className="text-xs text-slate-400">{dmy(b.at)}</div></div></div>)
-          : <p className="text-center text-slate-400 py-12">Không có đặt phòng phù hợp</p>}</div></div>
-        : <div className="overflow-x-auto"><table className="w-full text-sm min-w-[1500px]"><thead><tr className="bg-slate-50 text-[11px] font-semibold tracking-wide text-slate-500 text-left">{['MÃ KHÁCH SẠN', 'TÊN KHÁCH SẠN', 'MÃ BOOKING', 'TÊN KHÁCH', 'KÊNH OTA', 'NGÀY ĐẶT', 'NHẬN PHÒNG', 'TRẢ PHÒNG', 'STAYDATE', 'SỐ ĐÊM', 'ROOM', 'GÓI GIÁ', 'TỔNG CỘNG'].map(h => <th key={h} className="px-3 py-3 font-semibold whitespace-nowrap">{h}</th>)}</tr></thead>
-          <tbody>{list.map(b => <tr key={b.code} className="border-b border-slate-100 hover:bg-slate-50 cursor-pointer" onClick={() => setSel(b)}>
-            <td className="px-3 py-3 whitespace-nowrap">{hotel.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'hotel'}</td><td className="px-3 whitespace-nowrap">{hotel}</td>
-            <td className="px-3 whitespace-nowrap">{b.code} <Copy className="inline w-3.5 h-3.5 text-slate-400" /></td><td className="px-3 whitespace-nowrap">{b.guest.length > 24 ? b.guest.slice(0, 24) + '…' : b.guest}</td><td className="px-3"><Chan c={b.ch} /></td>
-            <td className="px-3 whitespace-nowrap">{dmy(b.at)}<div className="text-xs text-slate-400">{b.at.slice(11)}</div></td><td className="px-3 whitespace-nowrap">{dmy(b.ci)}</td><td className="px-3 whitespace-nowrap">{dmy(b.co)}</td>
-            <td className="px-3 whitespace-nowrap">{dm(b.ci)} → {dm(addDays(b.co, -1))}</td><td className="px-3 text-right">{b.nights}</td><td className="px-3 whitespace-nowrap">{b.rooms[0].hang}{b.n > 1 ? ` +${b.n - 1}` : ''}</td><td className="px-3 whitespace-nowrap">{b.rooms[0].pkg}</td><td className="px-3 text-right font-semibold whitespace-nowrap">{money(b.total)} ₫</td></tr>)}</tbody></table>
+          : <p className="text-center text-slate-400 py-12">Không có đặt phòng phù hợp</p>}</div></div></>
+        : <div className="overflow-x-auto"><table className="w-full text-sm min-w-[2500px]"><thead><tr className="bg-slate-50 text-[11px] font-semibold tracking-wide text-slate-500 text-left">{REP.map(([h, , cls], k) => <th key={h} className={`px-3 py-3 font-semibold whitespace-nowrap ${cls === 'r' ? 'text-right' : ''} ${k === 0 ? 'sticky left-0 z-10 bg-slate-50' : ''}`}>{h}</th>)}</tr></thead>
+          <tbody>{list.map(b => <tr key={b.code} className="border-b border-slate-100 hover:bg-slate-50 cursor-pointer group" onClick={() => setSel(b)}>{REP.map(([h, f, cls], k) => <td key={h} className={`px-3 py-3.5 whitespace-nowrap ${cls === 'r' ? 'text-right' : ''} ${k === 0 ? 'sticky left-0 z-10 bg-white group-hover:bg-slate-50' : ''}`}>{f(b, hotel)}</td>)}</tr>)}</tbody></table>
           {!list.length && <p className="text-center text-slate-400 py-12">Không có đặt phòng phù hợp</p>}</div>}
       <p className="text-xs text-slate-400 mt-3">{list.length} đơn · dữ liệu minh hoạ</p>
     </Card>
@@ -89,57 +101,48 @@ export default function Booking() {
 }
 
 
-const CARD = 'bg-white rounded-2xl border border-slate-200/80 shadow-sm';
-const Row = ({ k, v, copyable }) => <div className="grid grid-cols-[150px_minmax(0,1fr)] gap-4 py-2.5 border-b border-slate-100 last:border-0 text-sm"><span className="text-slate-500">{k}</span>
-  <span className="font-medium text-ink break-words">{v}{copyable && <Copy className="inline w-3.5 h-3.5 ml-2 -mt-0.5 text-slate-300 hover:text-ink cursor-pointer transition-colors" onClick={() => copy(v)} />}</span></div>;
+const Row = ({ k, v, copyable }) => <div className="grid grid-cols-[200px_minmax(0,1fr)] max-md:grid-cols-[auto_minmax(0,1fr)] gap-4 py-2.5 text-sm"><span className="text-slate-500">{k}</span>
+  <span className="font-medium text-ink break-words max-md:text-right">{v}{copyable && <Copy className="inline w-3.5 h-3.5 ml-2 -mt-0.5 text-slate-300 hover:text-ink cursor-pointer transition-colors" onClick={() => copy(v)} />}</span></div>;
 // Đóng/mở mượt: animate chiều cao bằng grid-rows
 const Fold = ({ open, children }) => <div className={`grid transition-[grid-template-rows] duration-300 ease-out ${open ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}><div className="overflow-hidden min-h-0"><div className={`transition-opacity duration-300 ${open ? 'opacity-100' : 'opacity-0'}`}>{children}</div></div></div>;
 function Sec({ t, children, def }) {
   const [o, setO] = useState(!!def);
-  return <section><button type="button" onClick={() => setO(!o)} className="w-full flex items-center gap-2.5 py-3.5 text-left group"><span className="w-1 h-4 rounded-full bg-sky-300" />
-    <span className="flex-1 font-serif font-bold text-[13px] tracking-wide text-slate-700 uppercase group-hover:text-ink transition-colors">{t}</span><ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-300 ${o ? 'rotate-180' : ''}`} /></button>
-    <Fold open={o}><div className="pb-3">{children}</div></Fold></section>;
+  return <section className="mt-3 max-md:rounded-xl max-md:border max-md:border-slate-200 max-md:shadow-sm max-md:overflow-hidden"><button type="button" onClick={() => setO(!o)} className="w-full flex items-center gap-3 py-3 text-left group border-l-[3px] border-sky-300 pl-3 max-md:pr-4">
+    <span className="flex-1 font-bold text-[13px] tracking-wide text-slate-600 uppercase group-hover:text-ink transition-colors">{t}</span><ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-300 ${o ? 'rotate-180' : ''}`} /></button>
+    <Fold open={o}><div className="pt-1 pb-3 pl-3 max-md:pr-4">{children}</div></Fold></section>;
 }
-const Fact = ({ k, v }) => <div><div className="text-xs text-slate-400 mb-0.5">{k}</div><div className="font-medium text-ink">{v}</div></div>;
 function Detail({ b, onClose }) {
   const [night, setNight] = useState({}), c = CH[b.ch], guests = b.rooms.reduce((a, r) => [a[0] + r.adults, a[1] + r.kids, a[2] + r.infants], [0, 0, 0]), gt = `${guests[0]} người lớn · ${guests[1]} trẻ em · ${guests[2]} em bé`;
-  const pre = b.total / 1.0945, tax = b.total - pre, canceled = b.status === 'Đã huỷ', mail = 'tu***@' + c.mail;
+  const pre = b.total / 1.0945, tax = b.total - pre, canceled = b.status === 'Đã huỷ', mail = 'tu***@' + c.mail, atFull = `${b.at.slice(11)}:59 ${dmy(b.at)}`;
   useEffect(() => { const h = e => e.key === 'Escape' && onClose(); window.addEventListener('keydown', h); return () => window.removeEventListener('keydown', h); }, []);
-  return <><div className="fixed inset-0 bg-slate-900/40 backdrop-blur-[2px] z-40 anim-fade" onClick={onClose} />
-    <div className="fixed right-0 top-0 bottom-0 w-[1200px] max-w-[94vw] bg-white z-50 flex flex-col shadow-2xl anim-slide">
-      <div className="flex justify-between items-center px-7 py-4 border-b bg-white"><h2 className="font-serif text-xl font-bold">Chi tiết đặt phòng</h2><button type="button" onClick={onClose} className="w-9 h-9 grid place-items-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-ink"><X className="w-5 h-5" /></button></div>
-      <div className="flex-1 overflow-y-auto p-7 bg-slate-50 scroll-smooth">
-        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] gap-6 items-start">
-          <div className="space-y-5 min-w-0">
-            <div className={`${CARD} p-6`}>
-              <div className="flex flex-wrap items-center gap-2.5"><b className="text-lg tracking-tight">{b.code}</b><button type="button" onClick={() => copy(b.code)} className="text-slate-300 hover:text-ink transition-colors"><Copy className="w-4 h-4" /></button><span className="px-2.5 py-0.5 rounded-full bg-slate-100 text-xs font-medium text-slate-600">{b.ch}</span><Stat s={b.status} /></div>
-              <div className="grid grid-cols-2 gap-x-6 gap-y-4 mt-5"><Fact k="Lưu trú" v={`${dmy(b.ci)} → ${dmy(b.co)}`} /><Fact k="Số đêm" v={b.nights} /><Fact k="Số phòng" v={b.n} /><Fact k="Ngày đặt" v={`${b.at.slice(11)}:59 ${dmy(b.at)}`} /><div className="col-span-2"><Fact k="Số khách" v={gt} /></div></div>
-              <div className="mt-5 rounded-xl bg-slate-50 px-4 py-3.5 flex items-end justify-between"><span className="text-sm text-slate-500">Tổng đơn</span><span className={`text-3xl font-bold tracking-tight ${canceled ? 'text-slate-300 line-through' : 'text-blue-600'}`}>{money(b.total)} ₫</span></div></div>
-            <div className={`${CARD} px-6 divide-y divide-slate-100`}>
-              <Sec def t="Khách"><Row k="Tên khách" v={b.guest} /><Row k="Điện thoại" v="+842****66(***)" /><Row k="Email" v={mail} /><Row k="Số lượng khách" v={gt} /><Row k="Quốc gia" v="N/A" /><Row k="Ngôn ngữ" v="en" /><Row k="Thành phố" v="N/A" /><Row k="Địa chỉ" v="N/A" /><Row k="Mã bưu chính" v="N/A" /><Row k="Giờ đến dự kiến" v="N/A" /><Row k="SĐT liên hệ (OTA)" v="+842****66(***)" /><Row k="Email liên hệ (OTA)" v={mail} /></Sec>
-              <Sec def t="Ghi chú đặt phòng"><p className="text-sm leading-relaxed text-slate-700">Guests searching number for booking: 2AD 2CH (Age: 6,8); Quiet room; Smoke-free treatment required; Package; Diamond member 10% off; Please contact guest by system generated mail; preferred language: (English).</p></Sec>
-              <Sec t="Lịch sử đặt phòng"><div className="rounded-lg bg-slate-50 px-3.5 py-2.5 flex justify-between text-sm"><span className="font-medium">{b.status}</span><span className="text-slate-400 text-sm">{b.at.slice(11)}:59 {dmy(b.at)}</span></div></Sec></div>
-          </div>
-          <div className="space-y-5 min-w-0">
-            <div className={`${CARD} p-6`}>
-              <div className="text-sm font-semibold tracking-wide text-slate-500 mb-3">PHÒNG ({b.n})</div>
-              <div className="space-y-3">{b.rooms.map((r, i) => <div key={i} className="rounded-xl border border-slate-200 overflow-hidden">
-                <div className="grid grid-cols-[1.2fr_1.2fr_1.5fr_1fr] gap-3 px-4 py-2 bg-slate-50 text-sm text-slate-500"><span>Hạng phòng</span><span>Gói giá</span><span>Số khách</span><span className="text-right">Giá phòng</span></div>
-                <div className="grid grid-cols-[1.2fr_1.2fr_1.5fr_1fr] gap-3 px-4 py-3.5 items-center text-sm"><span className="font-medium">{r.hang}</span>
-                  <span><span className="inline-block px-2 py-0.5 rounded-md border border-green-200 bg-green-50 text-green-700 text-xs font-medium">{r.pkg}</span><div className="text-xs text-green-700/80 mt-1">Mã ưu đãi: {r.promo}</div></span>
-                  <span className="text-slate-500">{r.adults} người lớn · {r.kids} trẻ em · {r.infants} em bé</span><span className="text-right font-semibold">{money(r.price)} ₫</span></div>
-                <button type="button" className="w-full px-4 py-2 text-sm text-slate-500 hover:text-ink flex items-center gap-1 border-t border-slate-100 transition-colors" onClick={() => setNight(o => ({ ...o, [i]: !o[i] }))}><ChevronDown className={`w-3.5 h-3.5 transition-transform duration-300 ${night[i] ? 'rotate-180' : ''}`} />Giá từng đêm</button>
-                <Fold open={!!night[i]}><div className="px-4 pb-3 grid grid-cols-2 gap-x-8 text-sm text-slate-600">{r.nightly.map((p, k) => <div key={k} className="flex justify-between py-1 border-b border-slate-100"><span>{dmy(addDays(b.ci, k))}</span><span className="font-medium">{money(p)} ₫</span></div>)}</div></Fold></div>)}</div>
-              <div className="flex justify-between items-center rounded-xl bg-blue-50 px-4 py-3 mt-3 font-medium"><span>Cộng đơn</span><span className="text-blue-600 text-lg font-bold">{money(b.total)} ₫</span></div>
-              <div className="flex justify-between text-sm mt-3 px-1"><span className="text-slate-500">Bữa ăn</span><span className="font-medium">Chỉ phòng, không gồm bữa ăn (Room only)</span></div>
-              <div className="mt-3 pt-3 border-t border-slate-100 grid grid-cols-2 gap-x-6 gap-y-1.5 text-sm text-slate-500"><span>Giá trước thuế: <b className="text-ink font-medium">{money(pre)} ₫</b></span><span>Tổng sau thuế: <b className="text-ink font-medium">{money(b.total)} ₫</b></span><span>Thuế (đã gồm): <b className="text-ink font-medium">{money(tax * 0.24)} ₫</b></span><span>Thuế (đã gồm): <b className="text-ink font-medium">{money(tax * 0.76)} ₫</b></span></div></div>
-            <div className={`${CARD} px-6 divide-y divide-slate-100`}>
-              <Sec def t="Thanh toán"><Row k="Thu tiền" v="—" /><Row k="Phương thức thanh toán" v="Chuyển khoản ngân hàng" /><Row k="Tiền cọc / Bảo lãnh" v="N/A" /><Row k="Thẻ" v="Không có thông tin thẻ" /><Row k="Trả trước" v="Có" /><Row k="Giá trước thuế" v={money(pre) + ' ₫'} /><Row k="Tổng sau thuế" v={money(b.total) + ' ₫'} />
-                <Row k="Thuế" v={<>Thuế (đã gồm): {money(tax * 0.24)} ₫<br />Thuế (đã gồm): {money(tax * 0.76)} ₫</>} /><Row k="Hoa hồng OTA" v="N/A" /><Row k="Thực nhận" v="N/A" /><div className="mt-3 rounded-lg bg-slate-50 py-3 text-center text-sm text-slate-400">Chưa có dữ liệu lịch sử thanh toán</div></Sec>
-              <Sec t="Thông tin kỹ thuật"><Row k="Mã hệ thống" v={b.sysId} /><Row k="Mã đặt phòng" v={b.code} copyable /><Row k="Mã gốc kênh" v={b.code} copyable /><Row k="Mã OTA" v={b.code.replace(/^[A-Z]+-/, '')} copyable /><Row k="System ID" v={String(1795046278727 + b.code.length)} copyable /><Row k="Mã phiên bản" v="279cf557-563a-44df-b6ef-92cc32587d02" /><Row k="RUID" v="—" />
-                <Row k="Đồng bộ PMS" v={<span className={`px-2.5 py-0.5 rounded-full text-xs ${b.sync === 'Đã nhận' ? 'bg-blue-50 text-blue-600' : 'bg-slate-100 text-slate-500'}`}>{b.sync}</span>} />
-                <div className="text-sm text-slate-400 mt-3 mb-1.5">Phòng (theo kênh OTA)</div>{b.rooms.map((r, i) => <div key={i} className="rounded-lg bg-slate-50 px-3.5 mb-2"><Row k="Hạng phòng" v={r.hang} /><Row k="Mã hạng phòng (OTA)" v={String(612983591 + i)} /><Row k="Gói giá" v={r.pkg} /><Row k="Mã gói giá (OTA)" v={String(1480031910 + i)} /><Row k="Mã ưu đãi" v={r.promo} /><Row k="Bữa ăn" v="Chỉ phòng, không gồm bữa ăn (Room only)" /></div>)}</Sec></div>
-          </div>
+  return <><div className="fixed inset-0 bg-slate-900/50 z-40 anim-fade" onClick={onClose} />
+    <div className="fixed right-0 top-0 bottom-0 w-[1300px] max-w-full max-md:left-0 max-md:w-auto max-md:max-w-none bg-white z-50 flex flex-col shadow-2xl anim-slide">
+      <div className="flex justify-between items-center px-7 max-md:px-4 py-4 border-b bg-white max-md:flex-row-reverse max-md:justify-end max-md:gap-3"><h2 className="font-serif text-xl font-bold">Chi tiết đặt phòng</h2><button type="button" onClick={onClose} className="w-9 h-9 grid place-items-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-ink"><X className="w-5 h-5" /></button></div>
+      <div className="flex-1 overflow-y-auto p-7 max-md:p-4 pb-12">
+        <div className="rounded-xl border border-slate-200 px-5 py-4">
+          <div className="flex flex-wrap items-center gap-2.5"><b className="text-base tracking-tight break-all">{b.code}</b><button type="button" onClick={() => copy(b.code)} className="text-slate-400 hover:text-ink transition-colors"><Copy className="w-4 h-4" /></button><span className="px-2.5 py-0.5 rounded-full bg-slate-100 text-xs font-medium text-slate-600">{b.ch}</span><Stat s={b.status} /></div>
+          <div className="mt-2 divide-y divide-transparent"><Row k="Lưu trú" v={`${dmy(b.ci)} → ${dmy(b.co)}`} /><Row k="Số đêm" v={b.nights} /><Row k="Số phòng" v={b.n} /><Row k="Số khách" v={gt} /><Row k="Ngày đặt" v={atFull} /></div>
+          <div className="border-t border-slate-100 mt-2 pt-3 max-md:flex max-md:items-end max-md:justify-between"><div className="text-sm text-slate-500">Tổng đơn</div><div className={`text-3xl max-md:text-2xl font-bold tracking-tight mt-1 ${canceled ? 'text-slate-300 line-through' : 'text-blue-700'}`}>{money(b.total)} ₫</div></div></div>
+
+        <div className="mt-7 mb-2.5 text-[13px] font-semibold tracking-wide text-slate-500 uppercase">Phòng ({b.n})</div>
+        <div className="rounded-xl border border-slate-200 overflow-hidden text-sm">
+          <div className="grid grid-cols-[1.4fr_1.2fr_1.6fr_1fr] gap-3 px-4 py-2.5 bg-slate-50 text-slate-500 max-md:hidden"><span>Hạng phòng</span><span>Gói giá</span><span>Số khách</span><span className="text-right">Giá phòng</span></div>
+          {b.rooms.map((r, i) => <div key={i} className="border-t border-slate-100">
+            <div className="grid grid-cols-[1.4fr_1.2fr_1.6fr_1fr] max-md:grid-cols-[1fr_auto] gap-3 max-md:gap-x-3 max-md:gap-y-2 px-4 py-3.5 items-center"><span className="font-medium max-md:order-1">{r.hang}</span><span className="max-md:order-4 max-md:col-span-2 max-md:rounded-lg max-md:bg-slate-50 max-md:px-3 max-md:py-2">{r.pkg}<div className="text-xs text-slate-400 mt-0.5">Mã ưu đãi: {r.promo}</div></span>
+              <span className="text-slate-500 text-xs max-md:order-3 max-md:col-span-2">{r.adults} người lớn · {r.kids} trẻ em · {r.infants} em bé</span><span className="text-right font-semibold max-md:order-2">{money(r.price)} ₫</span></div>
+            <button type="button" className="w-full px-4 pb-2.5 text-xs text-slate-500 hover:text-ink flex items-center gap-1 transition-colors" onClick={() => setNight(o => ({ ...o, [i]: !o[i] }))}><ChevronDown className={`w-3.5 h-3.5 transition-transform duration-300 ${night[i] ? 'rotate-180' : ''}`} />Giá từng đêm</button>
+            <Fold open={!!night[i]}><div className="px-4 pb-3 grid grid-cols-2 gap-x-8 text-sm text-slate-600">{r.nightly.map((p, k) => <div key={k} className="flex justify-between py-1 border-b border-slate-100"><span>{dmy(addDays(b.ci, k))}</span><span className="font-medium">{money(p)} ₫</span></div>)}</div></Fold></div>)}
+          <div className="flex justify-between items-center bg-blue-50 px-4 py-3 border-t border-slate-100 font-medium"><span>Cộng đơn</span><span className="text-blue-700 font-semibold">{money(b.total)} ₫</span></div></div>
+
+        <div className="mt-6">
+          <Sec t="Khách"><Row k="Tên khách" v={b.guest} /><Row k="Điện thoại" v="+842****66(***)" /><Row k="Email" v={mail} /><Row k="Số lượng khách" v={gt} /><Row k="Quốc gia" v="N/A" /><Row k="Ngôn ngữ" v="en" /><Row k="Thành phố" v="N/A" /><Row k="Địa chỉ" v="N/A" /><Row k="Mã bưu chính" v="N/A" /><Row k="Giờ đến dự kiến" v="N/A" /><Row k="SĐT liên hệ (OTA)" v="+842****66(***)" /><Row k="Email liên hệ (OTA)" v={mail} />
+            <Row k="Ghi chú đặt phòng" v="Guests searching number for booking: 2AD 2CH (Age: 6,8); Quiet room; Smoke-free treatment required; Package; Diamond member 10% off; Please contact guest by system generated mail; preferred language: (English)." /></Sec>
+          <Sec t="Thanh toán"><Row k="Thu tiền" v="—" /><Row k="Phương thức thanh toán" v="Chuyển khoản ngân hàng" /><Row k="Tiền cọc / Bảo lãnh" v="N/A" /><Row k="Thẻ" v="Không có thông tin thẻ" /><Row k="Trả trước" v="Có" /><Row k="Giá trước thuế" v={money(pre) + ' ₫'} /><Row k="Tổng sau thuế" v={money(b.total) + ' ₫'} />
+            <Row k="Thuế" v={<>Thuế (đã gồm): {money(tax * 0.24)} ₫<br />Thuế (đã gồm): {money(tax * 0.76)} ₫</>} /><Row k="Hoa hồng OTA" v="N/A" /><Row k="Thực nhận" v="N/A" /><div className="mt-2 rounded-lg bg-slate-50 py-3 text-center text-sm text-slate-400">Chưa có dữ liệu lịch sử thanh toán</div></Sec>
+          <Sec t="Lịch sử đặt phòng"><div className="rounded-lg bg-slate-50 px-3.5 py-2.5 flex justify-between text-sm"><span className="font-medium">{b.status}</span><span className="text-slate-400 text-sm">{atFull}</span></div></Sec>
+          <Sec t="Thông tin kỹ thuật"><Row k="Mã hệ thống" v={b.sysId} /><Row k="Mã đặt phòng" v={b.code} copyable /><Row k="Mã gốc kênh" v={b.code} copyable /><Row k="Mã OTA" v={b.code.replace(/^[A-Z]+-/, '')} copyable /><Row k="System ID" v={String(1795046278727 + b.code.length)} copyable /><Row k="Mã phiên bản" v="279cf557-563a-44df-b6ef-92cc32587d02" /><Row k="RUID" v="—" />
+            <Row k="Đồng bộ PMS" v={<span className={`px-2.5 py-0.5 rounded-full text-xs ${b.sync === 'Đã nhận' ? 'bg-blue-50 text-blue-600' : 'bg-slate-100 text-slate-500'}`}>{b.sync}</span>} />
+            <div className="text-sm text-slate-400 mt-3 mb-1.5">Phòng (theo kênh OTA)</div>{b.rooms.map((r, i) => <div key={i} className="rounded-lg bg-slate-50 px-3.5 mb-2"><Row k="Hạng phòng" v={r.hang} /><Row k="Mã hạng phòng (OTA)" v={String(612983591 + i)} /><Row k="Gói giá" v={r.pkg} /><Row k="Mã gói giá (OTA)" v={String(1480031910 + i)} /><Row k="Mã ưu đãi" v={r.promo} /><Row k="Bữa ăn" v="Chỉ phòng, không gồm bữa ăn (Room only)" /></div>)}</Sec>
         </div>
       </div></div></>;
 }

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, ChevronDown, ChevronLeft, ChevronRight, Search } from 'lucide-react';
+import { ArrowLeft, Clock, ChevronDown, ChevronLeft, ChevronRight, Search } from 'lucide-react';
 
 /* ---------- toast ---------- */
 let pushToast = () => {};
@@ -13,7 +14,7 @@ export function Toaster() {
   useEffect(() => { pushToast = x => { setList(l => [...l, x]); setTimeout(() => setList(l => l.filter(i => i !== x)), 2200); }; pushAsk = setDlg; }, []);
   const done = v => { dlg?.res(v); setDlg(null); };
   useEffect(() => { if (!dlg) return; const h = e => e.key === 'Escape' && done(false); window.addEventListener('keydown', h); return () => window.removeEventListener('keydown', h); }, [dlg]);
-  return <><div className="fixed top-5 right-5 z-[60] space-y-2">{list.map(x =>
+  return <><div className="fixed top-3 right-3 left-3 sm:left-auto sm:top-5 sm:right-5 z-[60] space-y-2">{list.map(x =>
     <div key={x.id} className={`px-4 py-3 rounded-lg shadow-lg text-white anim-pop ${x.err ? 'bg-red-600' : 'bg-emerald-600'}`}>{x.t}</div>)}</div>
     {dlg && <div className="fixed inset-0 z-[70] grid place-items-center bg-slate-900/40 backdrop-blur-[2px] anim-fade" onClick={() => done(false)}>
       <div className="w-[420px] max-w-[92vw] bg-white rounded-2xl shadow-2xl p-6 anim-pop" onClick={e => e.stopPropagation()}>
@@ -39,14 +40,34 @@ export const Card = ({ className = '', ...p }) => <div {...p} className={`bg-whi
 export const H2 = ({ children }) => <h3 className="font-serif font-bold text-ink text-base mb-3">{children}</h3>;
 export const Badge = ({ children }) => <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-50 text-green-700 border border-green-200">{children}</span>;
 
+const pad = n => String(n).padStart(2, '0');
+export function TimeField({ value, onChange, disabled }) {
+  const [open, setOpen] = useState(false), [h, m] = (value || '00:00').split(':'), [dh, setDh] = useState(h), [dm, setDm] = useState(m);
+  const mins = [...new Set([...Array.from({ length: 12 }, (_, i) => pad(i * 5)), m])].sort();
+  const col = (list, cur, set) => <div className="h-56 overflow-y-auto rounded-xl bg-slate-50 p-1.5 space-y-1">{list.map(x => <button key={x} type="button" ref={el => { if (el && cur === x && !el.parentElement.dataset.done) { el.parentElement.scrollTop = el.offsetTop - 90; el.parentElement.dataset.done = 1; } }} onClick={() => set(x)} className={`w-full py-2.5 rounded-lg text-lg ${cur === x ? 'bg-ink text-white font-semibold' : 'text-slate-700'}`}>{x}</button>)}</div>;
+  return <><button type="button" disabled={disabled} onClick={() => { setDh(h); setDm(m); setOpen(true); }} className="field flex items-center justify-between gap-2 text-left disabled:bg-slate-100"><span>{value || '--:--'}</span><Clock className="w-4 h-4 text-slate-500" /></button>
+    {open && createPortal(<><div className="fixed inset-0 bg-black/40 z-[60] anim-fade" onClick={() => setOpen(false)} />
+      <div className="fixed inset-x-0 bottom-0 z-[61] rounded-t-2xl bg-white p-4 pb-6 shadow-2xl anim-rise"><div className="mx-auto mb-3 h-1 w-10 rounded-full bg-slate-200" /><div className="font-semibold text-ink mb-3">Chọn giờ</div>
+        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">{col(Array.from({ length: 24 }, (_, i) => pad(i)), dh, setDh)}<b className="text-xl">:</b>{col(mins, dm, setDm)}</div>
+        <div className="flex gap-2 mt-4 [&>button]:flex-1"><Btn kind="ghost" onClick={() => setOpen(false)}>Huỷ</Btn><Btn onClick={() => { onChange(`${dh}:${dm}`); setOpen(false); }}>Xong</Btn></div></div></>, document.body)}</>;
+}
 export function Input({ label, f, k, type = 'text', ph, req, className = '', ...rest }) {
+  const narrow = useNarrow();
+  if (type === 'time' && narrow) return <div className={`block ${className}`}>{label && <span className="lbl">{label}</span>}<TimeField value={f.v[k]} onChange={x => f.set(k, x)} disabled={rest.disabled} /></div>;
   return <label className={`block ${className}`}>{label && <span className="lbl">{label}</span>}
     <input type={type} required={req} placeholder={ph} className="field" value={f.v[k] ?? ''} onChange={e => f.set(k, e.target.value)} {...rest} /></label>;
 }
+const useNarrow = () => { const q = '(max-width:767px)', [m, setM] = useState(() => window.matchMedia(q).matches);
+  useEffect(() => { const mq = window.matchMedia(q), h = () => setM(mq.matches); mq.addEventListener('change', h); return () => mq.removeEventListener('change', h); }, []); return m; };
 export function Select({ label, f, k, opts, className = '', ...rest }) {
-  return <label className={`block ${className}`}>{label && <span className="lbl">{label}</span>}
-    <select className="field pr-9" value={f.v[k] ?? ''} onChange={e => f.set(k, e.target.value)} {...rest}>
-      {opts.map(o => Array.isArray(o) ? <option key={o[0]} value={o[0]}>{o[1]}</option> : <option key={o}>{o}</option>)}</select></label>;
+  const narrow = useNarrow(), [open, setOpen] = useState(false), val = f.v[k] ?? '', O = opts.map(o => Array.isArray(o) ? o : [o, o]), cur = O.find(o => String(o[0]) === String(val)) || (val === '' ? O[0] : null);
+  return <div className={`block ${className}`}>{label && <span className="lbl">{label}</span>}
+    {narrow ? <><button type="button" disabled={rest.disabled} onClick={() => setOpen(true)} className="field flex items-center justify-between gap-2 text-left disabled:bg-slate-100"><span className="truncate">{cur ? cur[1] : val}</span><ChevronDown className="w-4 h-4 shrink-0 text-slate-400" /></button>
+      {open && createPortal(<><div className="fixed inset-0 bg-black/40 z-[60] anim-fade" onClick={() => setOpen(false)} />
+        <div className="fixed inset-x-0 bottom-0 z-[61] max-h-[70vh] overflow-y-auto rounded-t-2xl bg-white p-3 pb-6 shadow-2xl anim-rise"><div className="mx-auto mb-2 h-1 w-10 rounded-full bg-slate-200" />{label && <div className="px-3 pb-2 text-sm font-semibold text-ink">{String(label).replace(' *', '')}</div>}
+          {O.map(([v, l]) => { const on = String(v) === String(val); return <button key={v} type="button" onClick={() => { f.set(k, v); setOpen(false); }} className={`w-full flex items-center justify-between gap-3 px-3 py-3 rounded-xl text-[15px] text-left ${on ? 'bg-brand/10 text-brand-dark font-semibold' : 'text-slate-700'}`}><span>{l}</span>{on && <span>✓</span>}</button>; })}</div></>, document.body)}</>
+    : <select className="field pr-9" value={val} onChange={e => f.set(k, e.target.value)} {...rest}>
+      {O.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select>}</div>;
 }
 export const Area = ({ label, f, k, rows = 3, ph }) => <label className="block"><span className="lbl">{label}</span>
   <textarea rows={rows} placeholder={ph} className="field" value={f.v[k] ?? ''} onChange={e => f.set(k, e.target.value)} /></label>;
@@ -59,11 +80,11 @@ export const FToggle = ({ f, k, label }) => <Toggle checked={f.v[k]} onChange={x
 export const FCheck = ({ f, k, label }) => <Check checked={f.v[k]} onChange={x => f.set(k, x)} label={label} />;
 export const Radios = ({ f, k, opts }) => <div className="flex gap-5 py-2.5">{opts.map(o =>
   <label key={o} className="inline-flex items-center gap-2 text-sm"><input type="radio" checked={f.v[k] === o} onChange={() => f.set(k, o)} />{o}</label>)}</div>;
-export const Tabs = ({ items, value, onChange }) => <div className="inline-flex bg-slate-100 rounded-xl p-1 mb-5">{items.map(([id, t]) =>
-  <button key={id} type="button" onClick={() => onChange(id)} className={`px-4 py-2 rounded-lg ${value === id ? 'bg-white text-ink font-semibold shadow-sm' : 'text-slate-500'}`}>{t}</button>)}</div>;
-export const Seg = ({ items, value, onChange }) => <div className="inline-flex bg-white border rounded-xl p-1">{items.map(([id, t]) =>
-  <button key={id} type="button" onClick={() => onChange(id)} className={`px-4 py-1.5 rounded-lg ${value === id ? 'bg-ink text-white' : ''}`}>{t}</button>)}</div>;
-export const SearchBox = ({ value, onChange, ph }) => <div className="relative w-80"><input className="field pl-10" placeholder={ph} value={value} onChange={e => onChange(e.target.value)} /><Search className="w-4 h-4 absolute left-3 top-3.5 text-slate-400" /></div>;
+export const Tabs = ({ items, value, onChange }) => <div className="inline-flex max-md:flex max-w-full overflow-x-auto bg-slate-100 rounded-xl p-1 mb-5">{items.map(([id, t]) =>
+  <button key={id} type="button" onClick={() => onChange(id)} className={`px-4 py-2 rounded-lg max-md:flex-1 max-md:px-2 ${value === id ? 'bg-white text-ink font-semibold shadow-sm' : 'text-slate-500'}`}>{t}</button>)}</div>;
+export const Seg = ({ items, value, onChange, className = '' }) => <div className={`inline-flex bg-white border rounded-xl p-1 ${className}`}>{items.map(([id, t]) =>
+  <button key={id} type="button" onClick={() => onChange(id)} className={`px-4 py-1.5 rounded-lg max-md:flex-1 max-md:px-2 max-md:text-[13px] whitespace-nowrap ${value === id ? 'bg-ink text-white' : ''}`}>{t}</button>)}</div>;
+export const SearchBox = ({ value, onChange, ph }) => <div className="relative w-full sm:w-80"><input className="field pl-10" placeholder={ph} value={value} onChange={e => onChange(e.target.value)} /><Search className="w-4 h-4 absolute left-3 top-3.5 text-slate-400" /></div>;
 
 export const Table = ({ head, rows }) => <table className="w-full text-left"><thead><tr className="text-xs uppercase text-slate-500 border-b border-slate-200">
   {head.map(h => <th key={h} className="px-4 py-3 font-semibold">{h}</th>)}</tr></thead>
@@ -82,7 +103,7 @@ export const RowActions = ({ onEdit, onDel, extra }) => <div className="flex gap
 
 /* Multi-select dropdown: label shows "Tất cả N" when everything is ticked */
 export function MultiSelect({ label, opts, value, onChange, className = '', inline }) {
-  const [open, setOpen] = useState(false), [q, setQ] = useState(''), ref = useRef(null);
+  const [open, setOpen] = useState(false), [q, setQ] = useState(''), [rt, setRt] = useState(false), ref = useRef(null);
   useEffect(() => { // close on outside click
     const h = e => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
     document.addEventListener('mousedown', h); return () => document.removeEventListener('mousedown', h);
@@ -91,8 +112,8 @@ export function MultiSelect({ label, opts, value, onChange, className = '', inli
   const text = all ? `Tất cả ${opts.length}` : value.length === 0 ? 'Chưa chọn' : value.length === 1 ? (opts.find(o => o[0] === value[0]) || ['', '—'])[1] : `${value.length} đã chọn`;
   const toggle = v => onChange(value.includes(v) ? value.filter(x => x !== v) : [...value, v]);
   return <div ref={ref} className={`relative ${className}`}>{!inline && <span className="lbl">{label}</span>}
-    <button type="button" onClick={() => setOpen(o => !o)} className={`field flex justify-between items-center gap-2 text-left ${inline ? "!py-2" : ""}`}><span className="truncate">{inline && <span className="text-slate-400">{label}: </span>}{text}</span><ChevronDown className={`w-4 h-4 shrink-0 text-slate-400 transition-transform ${open ? 'rotate-180' : ''}`} /></button>
-    {open && <div className="absolute z-50 mt-1 w-full bg-white border border-slate-200 rounded-xl shadow-xl anim-drop p-2 max-h-64 overflow-y-auto">
+    <button type="button" onClick={() => { setRt(ref.current.getBoundingClientRect().left + 264 > window.innerWidth); setOpen(o => !o); }} className={`field flex justify-between items-center gap-2 text-left ${inline ? "!py-2" : ""}`}><span className="truncate">{inline && <span className="text-slate-400">{label}: </span>}{text}</span><ChevronDown className={`w-4 h-4 shrink-0 text-slate-400 transition-transform ${open ? 'rotate-180' : ''}`} /></button>
+    {open && <div className={`absolute z-50 mt-1 w-full max-md:w-64 ${rt ? 'max-md:right-0' : ''} bg-white border border-slate-200 rounded-xl shadow-xl anim-drop p-2 max-h-64 overflow-y-auto`}>
       <input className="field !py-1.5 mb-2" placeholder="Tìm kiếm" value={q} onChange={e => setQ(e.target.value)} />
       <div className="flex gap-3 px-2 pb-2 mb-1 border-b text-sm"><button type="button" className="text-brand" onClick={() => onChange(opts.map(o => o[0]))}>Chọn tất cả</button><span className="text-slate-300">|</span><button type="button" className="text-slate-400" onClick={() => onChange([])}>Xóa</button></div>
       {opts.filter(([, l]) => l.toLowerCase().includes(q.toLowerCase())).map(([v, l]) => <label key={v} className="flex items-center gap-2 px-2 py-1.5 hover:bg-slate-50 rounded"><input type="checkbox" className="rounded" checked={value.includes(v)} onChange={() => toggle(v)} />{l}</label>)}

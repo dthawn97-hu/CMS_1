@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, NavLink, Route, Routes, Navigate, useLocation } from 'react-router-dom';
 import { CalendarCheck, LayoutGrid, Users, BedDouble, UtensilsCrossed, ShoppingCart, ClipboardList, BarChart3, LayoutDashboard, Briefcase, Wallet, SlidersHorizontal, Package, PanelLeft, Bell, LogOut, UserRound, BellRing, Building2, CalendarDays, ChevronDown, ChevronRight, Inbox, Link2, TrendingUp } from 'lucide-react';
 import { DBProvider, useDB } from './store.jsx';
@@ -49,16 +49,16 @@ const NAV = [
 
 function Sidebar({ open }) {
   const { pathname } = useLocation(), { db } = useDB(), act = p => pathname === p || pathname.startsWith(p + '/');
-  return <aside className={`${open ? 'w-[264px]' : 'w-[68px]'} transition-[width] duration-200 shrink-0 bg-navy-900 text-slate-300 flex flex-col sticky top-0 h-screen overflow-y-auto`}>
-    <div className="px-5 py-4 whitespace-nowrap text-white text-xl font-bold flex items-center gap-2.5"><span className="w-8 h-8 rounded-lg bg-white grid place-items-center text-navy-900"><BellRing className="w-5 h-5" strokeWidth={2.2} /></span>{open && ' bellhop'}</div>
+  return <aside className={`${open ? 'w-[264px]' : 'lg:w-[68px]'} max-lg:w-[264px] max-lg:fixed max-lg:inset-y-0 max-lg:left-0 max-lg:z-50 max-lg:transition-transform ${open ? '' : 'max-lg:-translate-x-full'} lg:transition-[width] duration-200 shrink-0 bg-navy-900 text-slate-300 flex flex-col sticky top-0 h-screen overflow-y-auto overflow-x-hidden no-sb`}>
+    <div className={`py-4 whitespace-nowrap text-white text-xl font-bold flex items-center gap-2.5 ${open ? "px-5" : "lg:justify-center lg:px-0 px-5"}`}><span className="w-8 h-8 rounded-lg bg-white grid place-items-center text-navy-900"><BellRing className="w-5 h-5" strokeWidth={2.2} /></span>{open && ' bellhop'}</div>
     {open && <div className="px-4 mt-1 text-[11px] font-semibold tracking-widest text-slate-300">KHÁCH SẠN</div>}
     {open && <div className="mx-3 mt-1.5 mb-4 border border-white/20 rounded-lg px-3 py-2 text-white text-[13px] font-semibold flex justify-between gap-2"><span className="truncate">{db.hotel.ten_khach_san || '—'}</span><ChevronDown className="w-4 h-4" /></div>}
-    <nav className="px-2.5 flex-1 flex flex-col">{NAV.map(([lbl, items, end]) => <div key={lbl || 'top'} className={`space-y-0.5 ${end ? 'mt-auto pt-3 pb-3 border-t border-white/10' : 'mb-3'}`}>
+    <nav className={`${open ? "px-2.5" : "lg:px-2"} flex-1 flex flex-col`}>{NAV.map(([lbl, items, end]) => <div key={lbl || 'top'} className={`space-y-0.5 ${end ? 'mt-auto pt-3 pb-3 border-t border-white/10' : 'mb-3'}`}>
       {open && lbl && !end && <div className="px-3 pt-1 pb-1 text-[11px] font-semibold tracking-widest text-slate-300">{lbl}</div>}
       {items.map(([t, Icon, x, m]) => {
       const kids = Array.isArray(x), on = kids ? leaves(x).some(act) : (m || [x]).some(act);
       return <div key={t}>
-        <NavLink title={t} to={kids ? leaves(x)[0] : x} className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm ${on ? 'bg-navy-700 text-white font-semibold shadow-[inset_3px_0_0_#2bb3c6]' : 'hover:bg-navy-800'}`}>
+        <NavLink title={t} to={kids ? leaves(x)[0] : x} className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm ${open ? "" : "lg:justify-center lg:px-0 lg:py-3"} ${on ? 'bg-navy-700 text-white font-semibold shadow-[inset_3px_0_0_#2bb3c6]' : 'hover:bg-navy-800'}`}>
           <Icon className="w-[18px] h-[18px]" />{open && <span className="flex-1 truncate whitespace-nowrap">{t}</span>}{open && kids && (on ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />)}</NavLink>
         {open && kids && on && <div className="ml-5 border-l border-white/10 pl-2.5 space-y-0.5 mt-1">{x.map(([n, to]) => Array.isArray(to) ? <div key={n}><NavLink to={leaves(to)[0]} className={`flex items-center whitespace-nowrap px-3 py-2 rounded-lg text-sm ${leaves(to).some(act) ? 'text-white font-semibold' : 'text-slate-300 hover:text-white'}`}><span className="flex-1 truncate">{n}</span>{leaves(to).some(act) ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}</NavLink>
           {leaves(to).some(act) && <div className="ml-3 border-l border-white/10 pl-2 space-y-0.5 mt-0.5">{to.map(([n2, t2]) => <NavLink key={t2} to={t2} className={`block truncate whitespace-nowrap px-3 py-2 rounded-lg text-sm ${act(t2) ? 'text-white font-semibold' : 'text-slate-300 hover:text-white'}`}>{n2}</NavLink>)}</div>}</div>
@@ -72,10 +72,10 @@ function Header({ onToggle }) {
     <button type="button" title="Đóng/mở menu" onClick={onToggle} className="p-1.5 rounded text-slate-500 hover:text-ink hover:bg-slate-100"><PanelLeft className="w-5 h-5" /></button>
     <span className="text-sm text-slate-600 hidden lg:block">{new Date().toLocaleDateString('vi-VN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</span><div className="flex-1" />
     <details className="relative"><summary title="Thông báo" className="list-none cursor-pointer w-9 h-9 grid place-items-center rounded-full text-slate-500 hover:bg-slate-100"><Bell className="w-5 h-5" /></summary>
-      <div className="absolute right-0 mt-2 w-72 rounded-xl border border-slate-200 bg-white shadow-xl"><div className="px-4 py-3 border-b font-semibold text-ink">Thông báo</div><p className="px-4 py-6 text-center text-sm text-slate-400">Chưa có thông báo mới</p></div></details>
+      <div className="absolute right-0 mt-2 w-72 max-w-[calc(100vw-1.5rem)] rounded-xl border border-slate-200 bg-white shadow-xl"><div className="px-4 py-3 border-b font-semibold text-ink">Thông báo</div><p className="px-4 py-6 text-center text-sm text-slate-400">Chưa có thông báo mới</p></div></details>
     <details className="relative" onBlur={e => !e.currentTarget.contains(e.relatedTarget) && (e.currentTarget.open = false)}>
       <summary title="Tài khoản" className="list-none cursor-pointer flex items-center gap-2.5 pl-3 border-l border-slate-200 hover:opacity-80"><div className="w-8 h-8 rounded-full bg-ink text-white grid place-items-center text-xs font-bold">{ini}</div>
-        <div className="leading-tight text-[13px]"><div className="font-semibold text-ink">{name}</div><div className="text-xs text-slate-500">Chủ khách sạn</div></div><ChevronDown className="w-4 h-4 text-slate-400" /></summary>
+        <div className="leading-tight text-[13px] hidden sm:block"><div className="font-semibold text-ink">{name}</div><div className="text-xs text-slate-500">Chủ khách sạn</div></div><ChevronDown className="w-4 h-4 text-slate-400" /></summary>
       <div className="absolute right-0 mt-2 w-64 rounded-xl border border-slate-200 bg-white shadow-xl py-1.5 text-sm" onClick={e => e.currentTarget.parentNode.open = false}>
         <div className="flex items-center gap-3 px-4 py-3"><div className="w-10 h-10 rounded-lg bg-ink text-white grid place-items-center font-bold">{ini}</div><div className="min-w-0"><div className="font-bold text-ink truncate">{name}</div><div className="text-xs text-slate-500 truncate">{db.account.email}</div></div></div>
         <div className="border-t my-1" />
@@ -87,9 +87,10 @@ function Header({ onToggle }) {
 
 export default function App() {
   const { pathname } = useLocation(), [open, setOpen] = useState(() => window.innerWidth >= 1280);
+  useEffect(() => { if (window.innerWidth < 1024) setOpen(false); }, [pathname]);
   return <DBProvider>
-    <div className="flex min-h-screen"><Sidebar open={open} />
-      <div className="flex-1 min-w-0 flex flex-col"><Header onToggle={() => setOpen(o => !o)} /><main className="flex-1 min-w-0 p-8"><div key={pathname} className="anim-rise"><Routes>
+    <div className="flex min-h-screen"><Sidebar open={open} />{open && <div className="lg:hidden fixed inset-0 z-40 bg-slate-900/40" onClick={() => setOpen(false)} />}
+      <div className="flex-1 min-w-0 flex flex-col"><Header onToggle={() => setOpen(o => !o)} /><main className="flex-1 min-w-0 p-3 sm:p-5 lg:p-8"><div key={pathname} className="anim-rise"><Routes>
         <Route path="/" element={<Navigate to="/overview" replace />} />
         <Route path="/overview" element={<Overview />} /><Route path="/plans" element={<Plans />} /><Route path="/roles" element={<SettingsSoon t="Phân quyền" />} />
         {PMS_SET.slice(1).map(([t, to]) => <Route key={to} path={to} element={to.endsWith('/gio') ? <SL><HoursSettings /></SL> : to.endsWith('/ty-gia') ? <SL><Rates /></SL> : to.endsWith('/qrcode') ? <SL><QrPay /></SL> : to.endsWith('/import') ? <SL><ImportData /></SL> : to.endsWith('/dich-vu') ? <SL><Services /></SL> : to.endsWith('/may-in') ? <SL><PrintSettings /></SL> : to.endsWith('/thue-phi') ? <SL><TaxSettings /></SL> : <SettingsSoon t={t} />} />)}

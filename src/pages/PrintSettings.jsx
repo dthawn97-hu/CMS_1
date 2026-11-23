@@ -1,15 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
 import { AlignCenter, AlignJustify, AlignLeft, AlignRight, Bold, ChevronLeft, ChevronRight, Code2, Eye, FileText, Image, Indent, Italic, LayoutTemplate, Link2, List, ListOrdered, Outdent, Redo2, Receipt, Strikethrough, Table, Underline, Undo2 } from 'lucide-react';
 import { useDB } from '../store.jsx';
-import { Btn, Card, Title, toast } from '../ui.jsx';
+import { Btn, Card, Select, Title, toast } from '../ui.jsx';
 
 // ponytail: chỉ lưu trong state của trang (PMS chưa có backend) — nối API khi có PMS
 const PAPER = ['A4', 'A5', 'K80 (80mm)', 'K58 (58mm)'], DAYS = ['7 ngày', '15 ngày', '30 ngày', '60 ngày', '90 ngày'];
-const SUBS = [['room', FileText, 'Cấu hình hóa đơn phòng', 'Khổ giấy hóa đơn phòng'], ['sales', Receipt, 'Cấu hình hóa đơn bán hàng', 'Khổ giấy, xóa hóa đơn nháp'], ['tpl', LayoutTemplate, 'Thiết lập biểu mẫu', 'Soạn thảo mẫu in chứng từ']];
+const SUBS = [['room', FileText, 'Cấu hình hóa đơn phòng', 'Khổ giấy hóa đơn phòng', 'Hóa đơn phòng'], ['sales', Receipt, 'Cấu hình hóa đơn bán hàng', 'Khổ giấy, xóa hóa đơn nháp', 'Hóa đơn bán hàng'], ['tpl', LayoutTemplate, 'Thiết lập biểu mẫu', 'Soạn thảo mẫu in chứng từ', 'Biểu mẫu']];
 const fmt = d => `${d.toLocaleTimeString('vi-VN', { hour12: false })} ${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
 const PER = 5;
 
-const Sel = ({ l, v, set, opts }) => <label className="block"><span className="block font-semibold text-ink mb-1.5">{l}</span><select className="field" value={v} onChange={e => set(e.target.value)}>{opts.map(o => <option key={o}>{o}</option>)}</select></label>;
+const Sel = ({ l, v, set, opts }) => <Select label={l} f={{ v: { x: v }, set: (k, y) => set(y) }} k="x" opts={opts} />;
+const narrow = () => window.matchMedia('(max-width:767px)').matches;
 
 /* Khối cấu hình + lịch sử thay đổi dùng chung cho hóa đơn phòng / bán hàng */
 function Config({ kind, fields, title, sub, seed }) {
@@ -18,12 +19,12 @@ function Config({ kind, fields, title, sub, seed }) {
   const dirty = fields.some(f => v[f.k] !== saved[f.k]), pages = Math.max(1, Math.ceil(hist.length / PER));
   const save = () => { const ch = fields.filter(f => v[f.k] !== saved[f.k]).map(f => ({ t: fmt(new Date()), who, c: `${f.l}: ${saved[f.k]} → ${v[f.k]}` })); setHist([...ch, ...hist]); setSaved(v); setPg(0); toast('Đã lưu thay đổi'); };
   return <div className="space-y-5">
-    <Card className="p-6"><h3 className="font-semibold text-ink text-lg">{title}</h3><p className="text-sm text-slate-500 mb-5">{sub}</p>
-      <div className="grid grid-cols-2 gap-6">{fields.map(f => <Sel key={f.k} l={f.q} v={v[f.k]} set={x => setV({ ...v, [f.k]: x })} opts={f.opts} />)}</div>
-      <div className="flex justify-end gap-2 mt-5"><Btn kind="ghost" disabled={!dirty} onClick={() => setV(saved)}>Hủy</Btn><Btn disabled={!dirty} onClick={save}>Lưu thay đổi</Btn></div></Card>
-    <Card className="p-6"><h3 className="font-semibold text-ink mb-4">Lịch sử thay đổi</h3>
-      <div className="grid grid-cols-[1fr_1fr_1.4fr] px-4 py-3 text-sm font-semibold text-slate-600 border-b"><span>Thời gian</span><span>Người thay đổi</span><span>Thay đổi</span></div>
-      {hist.slice(pg * PER, pg * PER + PER).map((h, i) => <div key={i} className="grid grid-cols-[1fr_1fr_1.4fr] px-4 py-4 text-sm border-b last:border-0"><span>{h.t}</span><span>{h.who}</span><span>{h.c}</span></div>)}
+    <Card className="p-6 max-md:p-4"><h3 className="font-semibold text-ink text-lg">{title}</h3><p className="text-sm text-slate-500 mb-5">{sub}</p>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-md:gap-4">{fields.map(f => <Sel key={f.k} l={f.q} v={v[f.k]} set={x => setV({ ...v, [f.k]: x })} opts={f.opts} />)}</div>
+      <div className="flex justify-end gap-2 mt-5 max-md:[&>button]:flex-1"><Btn kind="ghost" disabled={!dirty} onClick={() => setV(saved)}>Hủy</Btn><Btn disabled={!dirty} onClick={save}>Lưu thay đổi</Btn></div></Card>
+    <Card className="p-6 max-md:p-4"><h3 className="font-semibold text-ink mb-4">Lịch sử thay đổi</h3>
+      <div className="max-md:hidden grid grid-cols-[1fr_1fr_1.4fr] px-4 py-3 text-sm font-semibold text-slate-600 border-b"><span>Thời gian</span><span>Người thay đổi</span><span>Thay đổi</span></div>
+      {hist.slice(pg * PER, pg * PER + PER).map((h, i) => <div key={i} className="grid grid-cols-[1fr_1fr_1.4fr] max-md:grid-cols-1 max-md:gap-0.5 px-4 max-md:px-1 py-4 max-md:py-3 text-sm border-b last:border-0"><span className="max-md:text-xs max-md:text-slate-400">{h.t}</span><span className="max-md:font-medium">{h.who}</span><span>{h.c}</span></div>)}
       {!hist.length && <p className="text-center text-sm text-slate-400 py-6">Chưa có thay đổi nào</p>}
       <div className="flex justify-end gap-2 mt-3"><Btn kind="ghost" disabled={pg === 0} onClick={() => setPg(pg - 1)}><ChevronLeft className="w-4 h-4" /></Btn><Btn kind="ghost" disabled={pg >= pages - 1} onClick={() => setPg(pg + 1)}><ChevronRight className="w-4 h-4" /></Btn></div></Card></div>;
 }
@@ -39,6 +40,7 @@ const DEFAULT = `<div style="text-align:center;font-weight:700;font-size:18px;pa
 <td style="${B}">Tổng tiền / Total price: ${tok('Total_price')}<br>Loại phòng / Room type: ${tok('Room_type')}<br>Đêm phòng / Room night: [Total_night]<br>Ngày đến / Arrival date: ${tok('Arrival')}<br>Ngày đi / Departure date: ${tok('Departure')}</td></tr></table>
 <p style="font-size:12px;padding:8px 0"><b>Thông tin khác:</b><br>- Biển số xe hơi: &nbsp; - Yêu cầu đặc biệt:<br>- Thuê xe máy: &nbsp; - Chèo SUP:</p>
 <p style="font-size:12px">- Tất cả khách lưu trú tại khách sạn cần được đăng ký lưu trú với lễ tân khách sạn. / Guests staying at the hotel must be registered at the reception desk.</p>`;
+const ZOOM = narrow() ? 0.45 : 0.75;
 const render = h => h.replace(/\[([A-Za-z_]+)\]/g, (m, k) => SAMPLE[k] ?? m);
 
 function Tools({ run, on }) {
@@ -66,29 +68,29 @@ function Templates() {
   const cur = mode === 'edit' ? null : (mode === 'raw' ? raw : store[key] ?? DEFAULT);
   return <div>
     <h3 className="font-semibold text-ink text-lg">Thiết lập biểu mẫu</h3><p className="text-sm text-slate-500 mb-4">Soạn thảo mẫu in theo từng loại biểu mẫu và ngôn ngữ.</p>
-    <div className="flex items-end gap-3 mb-4 flex-wrap"><div className="w-72"><Sel l="Loại biểu mẫu" v={type} set={t => switchTo(t, lang)} opts={TYPES} /></div><div className="w-44"><Sel l="Ngôn ngữ" v={lang} set={l => switchTo(type, l)} opts={LANGS} /></div>
+    <div className="flex items-end gap-3 mb-4 flex-wrap"><div className="w-72 max-md:w-full"><Sel l="Loại biểu mẫu" v={type} set={t => switchTo(t, lang)} opts={TYPES} /></div><div className="w-44 max-md:w-full"><Sel l="Ngôn ngữ" v={lang} set={l => switchTo(type, l)} opts={LANGS} /></div>
       <Btn kind="ghost" onClick={() => { navigator.clipboard?.writeText(html()); toast('Đã sao chép mẫu'); }}>Copy mẫu</Btn>
       <Btn kind="ghost" title="Xem / sửa HTML" onClick={() => toMode(mode === 'raw' ? 'edit' : 'raw')}><Code2 className="w-4 h-4" /></Btn>
       <Btn kind="ghost" onClick={() => toMode(mode === 'preview' ? 'edit' : 'preview')}><Eye className="w-4 h-4 mr-2 inline" />{mode === 'preview' ? 'Quay lại soạn' : 'Xem trước'}</Btn></div>
-    <div className="grid grid-cols-[1fr_260px] gap-4 items-start">
+    <div className="grid grid-cols-[1fr_260px] max-md:grid-cols-1 gap-4 items-start">
       <Card className="overflow-hidden">{mode === 'edit' && <Tools run={run} on={(cmd, label) => { const sel = getSelection(); rng.current = sel.rangeCount ? sel.getRangeAt(0) : null; setPr({ cmd, label, v: '' }); }} />}
         {mode === 'edit' && pr && <form className="flex items-center gap-2 p-2 border-b bg-slate-50" onSubmit={e => { e.preventDefault(); if (pr.v.trim()) { ref.current.focus(); const sel = getSelection(); sel.removeAllRanges(); rng.current && sel.addRange(rng.current); document.execCommand(pr.cmd, false, pr.v.trim()); } setPr(null); }}><span className="text-sm text-slate-600">{pr.label}</span><input autoFocus className="field !py-1.5 flex-1" value={pr.v} onChange={e => setPr({ ...pr, v: e.target.value })} /><Btn>Chèn</Btn><Btn type="button" kind="ghost" onClick={() => setPr(null)}>Huỷ</Btn></form>}
-        <div className="bg-slate-50 p-4 max-h-[560px] overflow-auto"><div className="text-xs text-slate-400 mb-3">Vừa màn hình (75%)</div>
+        <div className="bg-slate-50 p-4 max-md:p-3 max-h-[560px] overflow-auto"><div className="text-xs text-slate-400 mb-3">Vừa màn hình ({ZOOM * 100}%)</div>
           {mode === 'raw' ? <textarea className="field font-mono !text-xs h-[420px]" value={raw} onChange={e => setRaw(e.target.value)} />
-            : mode === 'preview' ? <div className="bg-white border border-slate-300 mx-auto p-4" style={{ width: 794, zoom: 0.75 }} dangerouslySetInnerHTML={{ __html: render(cur) }} />
-            : <div ref={ref} contentEditable suppressContentEditableWarning className="bg-white border border-slate-300 mx-auto p-4 outline-none" style={{ width: 794, minHeight: 500, zoom: 0.75 }} />}</div></Card>
-      <Card className="p-4 max-h-[620px] overflow-auto"><div className="text-xs font-semibold tracking-wide text-slate-500 mb-2">PHÒNG</div>
-        {TOKENS.map(t => <button key={t} type="button" title="Bấm để chèn vào vị trí con trỏ" disabled={mode !== 'edit'} onMouseDown={e => { e.preventDefault(); run('insertHTML', `<b>[${t}]</b>&nbsp;`); }} className="block w-full text-left px-2 py-1.5 rounded text-sm text-slate-700 hover:bg-slate-100 disabled:opacity-40">{t}</button>)}</Card></div>
-    <div className="mt-4"><Btn onClick={() => { setStore(s => ({ ...s, [key]: html() })); toast('Đã lưu mẫu in'); }}>Lưu mẫu in</Btn></div></div>;
+            : mode === 'preview' ? <div className="bg-white border border-slate-300 mx-auto p-4" style={{ width: 794, zoom: ZOOM }} dangerouslySetInnerHTML={{ __html: render(cur) }} />
+            : <div ref={ref} contentEditable suppressContentEditableWarning className="bg-white border border-slate-300 mx-auto p-4 outline-none" style={{ width: 794, minHeight: 500, zoom: ZOOM }} />}</div></Card>
+      <Card className="p-4 max-h-[620px] max-md:max-h-72 overflow-auto"><div className="text-xs font-semibold tracking-wide text-slate-500 mb-2">PHÒNG</div>
+        <div className="max-md:grid max-md:grid-cols-2 max-md:gap-x-2">{TOKENS.map(t => <button key={t} type="button" title="Bấm để chèn vào vị trí con trỏ" disabled={mode !== 'edit'} onMouseDown={e => { e.preventDefault(); run('insertHTML', `<b>[${t}]</b>&nbsp;`); }} className="block w-full text-left px-2 py-1.5 rounded text-sm text-slate-700 hover:bg-slate-100 disabled:opacity-40">{t}</button>)}</div></Card></div>
+    <div className="mt-4 max-md:[&>button]:w-full"><Btn onClick={() => { setStore(s => ({ ...s, [key]: html() })); toast('Đã lưu mẫu in'); }}>Lưu mẫu in</Btn></div></div>;
 }
 
 export default function PrintSettings() {
   const [tab, setTab] = useState('room');
   return <>
     <Title keep t="Máy in & Mẫu in" sub="Thiết lập khổ giấy in hóa đơn phòng, hóa đơn bán hàng và soạn thảo mẫu in chứng từ." />
-    <div className="grid grid-cols-[300px_1fr] gap-5 items-start">
-      <div className="space-y-2">{SUBS.map(([k, I, t, s]) => <button key={k} type="button" onClick={() => setTab(k)} className={`w-full flex items-start gap-3 text-left px-4 py-3 rounded-lg ${tab === k ? 'bg-ink text-white' : 'hover:bg-white'}`}>
-        <I className="w-4 h-4 mt-1" /><div><div className="text-sm">{t}</div><div className={`text-xs ${tab === k ? 'text-slate-300' : 'text-slate-400'}`}>{s}</div></div></button>)}</div>
+    <div className="grid grid-cols-[300px_1fr] max-md:grid-cols-1 gap-5 items-start">
+      <div className="space-y-2 max-md:space-y-0 max-md:grid max-md:grid-cols-[repeat(3,minmax(0,1fr))] max-md:gap-2">{SUBS.map(([k, I, t, s, sh]) => <button key={k} type="button" onClick={() => setTab(k)} className={`w-full flex items-start gap-3 text-left px-4 py-3 rounded-lg max-md:flex-col max-md:items-center max-md:text-center max-md:gap-1.5 max-md:px-2 max-md:border ${tab === k ? 'bg-ink text-white' : 'hover:bg-white max-md:bg-white'}`}>
+        <I className="w-4 h-4 mt-1 max-md:mt-0" /><span className="md:hidden text-[13px] leading-tight font-medium">{sh}</span><div className="max-md:hidden"><div className="text-sm">{t}</div><div className={`text-xs ${tab === k ? 'text-slate-300' : 'text-slate-400'}`}>{s}</div></div></button>)}</div>
       <div className="min-w-0">
         {tab === 'room' && <Config kind="room" title="Cấu hình hóa đơn phòng" sub="Thiết lập khổ giấy in hóa đơn phòng và biên lai." fields={[{ k: 'inv', l: 'Khổ hóa đơn phòng', q: 'Khổ in Hóa đơn phòng', opts: PAPER, def: 'A4' }, { k: 'rec', l: 'Khổ biên lai', q: 'Khổ in Biên lai', opts: PAPER, def: 'A4' }]}
           seed={[{ t: '15:39:09 7/9/2026', who: 'Smoke Test Admin', c: 'Khổ hóa đơn phòng: A5 → A4' }, { t: '09:49:11 7/9/2026', who: 'Smoke Test Admin', c: 'Khổ hóa đơn phòng: A4 → A5' }]} />}
