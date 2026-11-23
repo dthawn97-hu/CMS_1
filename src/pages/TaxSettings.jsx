@@ -7,7 +7,7 @@ import { Btn, Card, Select, Title, toast } from '../ui.jsx';
 const ZONES = [['room', 'Tiền phòng & phụ thu', 'Doanh thu tiền phòng và phụ thu tiền phòng'], ['svc', 'Dịch vụ', 'Đèn bù, giặt là, minibar, dịch vụ phòng...'], ['total', 'Tổng hóa đơn', 'Áp dụng trên toàn bộ hóa đơn']];
 const uid = () => Math.random().toString(36).slice(2, 8);
 const num = s => s.replace(/[^\d.]/g, '');
-const Head = ({ t, sub, right }) => <div className="flex items-start justify-between"><div><h3 className="font-semibold text-ink text-lg">{t}</h3>{sub && <p className="text-xs text-slate-500 mt-1">{sub}</p>}</div>{right}</div>;
+const Head = ({ t, sub, right, stack }) => <div className={`flex items-start justify-between ${stack ? 'max-md:flex-col max-md:gap-3' : 'gap-3'}`}><div><h3 className="font-semibold text-ink text-lg max-md:text-base max-md:leading-snug">{t}</h3>{sub && <p className="text-xs text-slate-500 mt-1">{sub}</p>}</div>{right}</div>;
 const AddBtn = ({ children, ...p }) => <Btn kind="ghost" {...p}><Plus className="w-4 h-4 mr-1 inline" />{children}</Btn>;
 const Fld = ({ l, children }) => <label className="block"><span className="block text-xs text-slate-600 mb-1.5">{l}</span>{children}</label>;
 
@@ -49,7 +49,7 @@ export default function TaxSettings() {
           {z === 'total' && <p className="text-[11px] text-slate-400 mt-3">Tổng hóa đơn = tổng hai công thức trên</p>}</div>)}</div>
         <label className="flex items-center gap-3"><input type="checkbox" checked={auto} onChange={e => setAuto(e.target.checked)} />Tự động áp dụng Thuế/Phí đối với các đặt phòng mới (không áp dụng với đặt phòng từ OTA)</label></Card>
 
-      <Card className="p-7 max-md:p-4 space-y-4"><Head t="Quy tắc Thuế/Phí theo Loại phòng/Kênh" right={<AddBtn disabled={!taxes.length} onClick={() => setRf({ tax: taxes[0]?.id ?? '', rate: '', room: '', ch: '' })}>Thêm quy tắc</AddBtn>} />
+      <Card className="p-7 max-md:p-4 space-y-4"><Head stack t="Quy tắc Thuế/Phí theo Loại phòng/Kênh" right={<AddBtn className="max-md:w-full" disabled={!taxes.length} onClick={() => setRf({ tax: taxes[0]?.id ?? '', rate: '', room: '', ch: '' })}>Thêm quy tắc</AddBtn>} />
         <p className="text-xs text-slate-500">Quy tắc cụ thể hơn (Loại phòng + Kênh) sẽ ưu tiên hơn quy tắc chung. Không cộng dồn — chỉ 1 quy tắc áp dụng cho mỗi lần tính.</p>
         {rf && <div className="grid grid-cols-[1fr_110px_1fr_1fr_auto] max-md:grid-cols-2 items-end gap-3 p-3 rounded-lg bg-slate-50 border">
           <Select label="Thuế/Phí" f={{ v: rf, set: (k, x) => setRf({ ...rf, [k]: x }) }} k="tax" opts={taxes.map(t => [t.id, t.name])} />

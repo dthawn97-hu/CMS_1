@@ -2,36 +2,36 @@ import { useState } from 'react';
 import { ChevronDown, ChevronRight, History, Plus, Printer, Search, ShoppingCart, Trash2, Wallet, X } from 'lucide-react';
 import { money, ymd } from '../store.jsx';
 import { debtOf, seqNo, stockOf, total, nextNo, uid, useStock } from '../stockStore.js';
-import { Btn, Card, Title, ask, toast } from '../ui.jsx';
+import { Btn, Card, SheetTabs, Title, ask, toast } from '../ui.jsx';
 import { Filters, Lbl, Modal, RangeFields, Table, Underline, dmy, useRange, vnd } from './FinanceFunds.jsx';
 
 // ponytail: dữ liệu mua hàng nằm trong bộ nhớ trình duyệt (PMS chưa có backend) — nối API khi có PMS
 const inR = (d, a) => (!a.from || d >= a.from) && (!a.to || d <= a.to), amber = 'font-bold text-amber-800', rnd = () => String(Math.floor(1000 + Math.random() * 9000));
 const BADGE = { 'Chưa tạo đặt hàng': 'bg-slate-100 text-slate-600', 'Đã tạo đặt hàng': 'bg-brand/10 text-brand-dark', 'Chờ thực hiện': 'bg-slate-100 text-slate-600', 'Đã thực hiện': 'bg-brand/10 text-brand-dark', 'Đã huỷ': 'bg-red-50 text-red-600' };
 const Pill = ({ s }) => <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap ${BADGE[s]}`}>{s}</span>;
-const Acts = ({ onDel, children }) => <div className="flex justify-end items-center gap-3 text-slate-500">{children}<button type="button" title="In phiếu" className="hover:text-ink" onClick={() => window.print()}><Printer className="w-4 h-4" /></button>{onDel && <button type="button" title="Xoá" className="hover:text-red-500" onClick={onDel}><Trash2 className="w-4 h-4" /></button>}</div>;
+const Acts = ({ onDel, children }) => <div className="flex justify-end items-center gap-3 text-slate-500 max-md:[&_button]:min-h-10 max-md:[&_button]:min-w-10 max-md:[&_button]:inline-flex max-md:[&_button]:items-center max-md:[&_button]:justify-center">{children}<button type="button" title="In phiếu" className="hover:text-ink" onClick={() => window.print()}><Printer className="w-4 h-4" /></button>{onDel && <button type="button" title="Xoá" className="hover:text-red-500" onClick={onDel}><Trash2 className="w-4 h-4" /></button>}</div>;
 const confirmDel = (what, run) => async () => { if (await ask(`Xoá ${what}? Thao tác không thể hoàn tác.`, { title: `Xoá ${what}?`, ok: 'Xoá', danger: true })) run(); };
 
 // bộ lọc dùng chung: khoảng thời gian + (tuỳ chọn) một ô chọn + nút
 function Bar({ r, onGet, onAdd, addLabel, extra, children }) {
   return <Filters><RangeFields r={r} />{children}<div className="flex-1" /><Btn onClick={onGet}><Search className="w-4 h-4 mr-2 inline" />Lấy dữ liệu</Btn><Btn kind="ghost" className="!border-brand !text-brand-dark" onClick={onAdd}><Plus className="w-4 h-4 mr-1 inline" />{addLabel}</Btn></Filters>;
 }
-const Sel = ({ l, v, set, opts, cls = 'w-44' }) => <Lbl l={l} className={`${cls} shrink-0`}><select className="field" value={v} onChange={e => set(e.target.value)}>{opts.map(o => Array.isArray(o) ? <option key={o[0]} value={o[0]}>{o[1]}</option> : <option key={o} value={o}>{o || 'Tất cả'}</option>)}</select></Lbl>;
+const Sel = ({ l, v, set, opts, cls = 'w-44' }) => <Lbl l={l} className={`${cls} shrink-0 max-md:!w-full`}><select className="field" value={v} onChange={e => set(e.target.value)}>{opts.map(o => Array.isArray(o) ? <option key={o[0]} value={o[0]}>{o[1]}</option> : <option key={o} value={o}>{o || 'Tất cả'}</option>)}</select></Lbl>;
 
 // bảng dòng hàng: price=true thì có cột đơn giá
 function Lines({ lines, set, mats, price }) {
   const up = (i, p) => set(lines.map((l, j) => j === i ? { ...l, ...p } : l));
-  return <div><div className="text-sm font-medium text-ink mb-1.5">Dòng hàng</div><div className="space-y-2">{lines.map((l, i) => <div key={i} className={`grid gap-2 ${price ? 'grid-cols-[1fr_80px_110px_28px]' : 'grid-cols-[1fr_90px_28px]'}`}>
-      <select className="field !py-2" value={l.m} onChange={e => up(i, { m: e.target.value })}>{mats.map(m => <option key={m.id} value={m.id}>{m.name} ({m.unit})</option>)}</select>
+  return <div><div className="text-sm font-medium text-ink mb-1.5">Dòng hàng</div><div className="space-y-2">{lines.map((l, i) => <div key={i} className={`grid gap-2 ${price ? 'grid-cols-[1fr_80px_110px_28px] max-md:grid-cols-[1fr_1fr_36px]' : 'grid-cols-[1fr_90px_28px] max-md:grid-cols-[1fr_36px]'}`}>
+      <select className={`field !py-2 ${price ? 'max-md:col-span-3' : 'max-md:col-span-2'}`} value={l.m} onChange={e => up(i, { m: e.target.value })}>{mats.map(m => <option key={m.id} value={m.id}>{m.name} ({m.unit})</option>)}</select>
       <input inputMode="decimal" className="field !py-2" placeholder="SL" value={l.q} onChange={e => up(i, { q: e.target.value.replace(/[^\d.]/g, '') })} />
       {price && <input inputMode="numeric" className="field !py-2" placeholder="Đơn giá" value={l.p ? money(+l.p) : ''} onChange={e => up(i, { p: e.target.value.replace(/\D/g, '') })} />}
-      <button type="button" title="Xoá dòng" disabled={lines.length < 2} className="text-slate-400 disabled:opacity-30" onClick={() => set(lines.filter((_, j) => j !== i))}><X className="w-4 h-4" /></button></div>)}</div>
+      <button type="button" title="Xoá dòng" disabled={lines.length < 2} className="text-slate-400 disabled:opacity-30 max-md:h-11 max-md:grid max-md:place-items-center" onClick={() => set(lines.filter((_, j) => j !== i))}><X className="w-4 h-4" /></button></div>)}</div>
     <button type="button" className="mt-2 text-sm font-medium text-brand-dark" onClick={() => set([...lines, { m: mats[0]?.id ?? '', q: '', p: '' }])}>+ Thêm dòng</button>
     {price && <div className="flex justify-between text-sm pt-3 mt-3 border-t"><span className="text-slate-500">Tổng tiền</span><b>{vnd(lines.reduce((a, l) => a + (+l.q || 0) * (+l.p || 0), 0))}</b></div>}</div>;
 }
 const clean = lines => lines.filter(l => l.m && +l.q > 0).map(l => ({ m: l.m, q: +l.q, p: +l.p || 0 }));
 const blankLine = s => ({ m: s.mats[0]?.id ?? '', q: '', p: '' });
-const Foot = ({ onClose, onSave, ok = 'Lưu' }) => <div className="flex justify-end gap-2 mt-5"><Btn kind="ghost" onClick={onClose}>Bỏ qua</Btn><Btn onClick={onSave}>{ok}</Btn></div>;
+const Foot = ({ onClose, onSave, ok = 'Lưu' }) => <div className="flex justify-end gap-2 mt-5 max-md:[&>button]:flex-1"><Btn kind="ghost" onClick={onClose}>Bỏ qua</Btn><Btn onClick={onSave}>{ok}</Btn></div>;
 const Head = ({ no, children }) => <><td className="font-bold text-amber-800">{no}</td>{children}</>;
 
 /* ---------- Báo hàng ---------- */
@@ -70,8 +70,8 @@ function Orders() {
     <h3 className="font-semibold text-ink mb-3">Danh sách đơn đặt hàng</h3>
     <Table cols={['Ngày', 'Số đơn', 'Nhà cung cấp', 'Kho nhận', 'Ngày dự kiến nhận', 'Tổng tiền', 'Trạng thái', 'Thao tác']} right={[5, 7]} empty="Không có đơn đặt hàng nào"
       rows={rows.map(p => [dmy(p.date), <span className={amber}>{p.no}</span>, nm(s.sups, p.sup), nm(s.whs, p.wh), p.eta ? dmy(p.eta) : '-', <b>{vnd(total(p))}</b>, <Pill s={p.st} />,
-        <div className="flex justify-end gap-2">{p.st === 'Chờ thực hiện' && <><button type="button" className="h-8 px-3 rounded-lg border border-brand text-brand-dark text-xs font-semibold" onClick={async () => { if (await ask(`Nhận hàng cho đơn ${p.no}? Hệ thống sẽ tạo phiếu nhập kho.`, { title: 'Nhập hàng', ok: 'Nhập hàng' })) { receive(p); toast('Đã tạo phiếu nhập hàng'); } }}>Nhập hàng</button>
-          <button type="button" className="h-8 px-3 rounded-lg border text-xs font-semibold text-slate-600" onClick={() => { set(st => ({ ...st, pos: st.pos.map(x => x.id === p.id ? { ...x, st: 'Đã huỷ' } : x) })); toast('Đã huỷ đơn'); }}>Huỷ</button></>}</div>])} />
+        <div className="flex justify-end gap-2">{p.st === 'Chờ thực hiện' && <><button type="button" className="h-8 max-md:h-10 px-3 rounded-lg border border-brand text-brand-dark text-xs font-semibold" onClick={async () => { if (await ask(`Nhận hàng cho đơn ${p.no}? Hệ thống sẽ tạo phiếu nhập kho.`, { title: 'Nhập hàng', ok: 'Nhập hàng' })) { receive(p); toast('Đã tạo phiếu nhập hàng'); } }}>Nhập hàng</button>
+          <button type="button" className="h-8 max-md:h-10 px-3 rounded-lg border text-xs font-semibold text-slate-600" onClick={() => { set(st => ({ ...st, pos: st.pos.map(x => x.id === p.id ? { ...x, st: 'Đã huỷ' } : x) })); toast('Đã huỷ đơn'); }}>Huỷ</button></>}</div>])} />
     {dlg && <PoForm init={dlg} onClose={() => setDlg(null)} />}</>;
 }
 
@@ -119,9 +119,16 @@ function Debts() {
     set(st => ({ ...st, pays: [...st.pays, { id: uid(), sup: pay.sup, date: pay.date, amt, method: pay.method, note: pay.note }] })); setPay(null); toast(`Đã thanh toán ${vnd(amt)}`); };
   const detail = id => [...s.docs.filter(d => d.sup === id && (d.kind === 'in' || d.kind === 'ret')).map(d => ({ date: d.date, t: d.kind === 'in' ? 'Nhập hàng' : 'Trả lại hàng', no: d.no, amt: d.kind === 'in' ? total(d) : -total(d) })), ...s.pays.filter(p => p.sup === id).map(p => ({ date: p.date, t: 'Thanh toán', no: p.method, amt: -p.amt }))].sort((a, b) => b.date.localeCompare(a.date));
   return <><Title keep t="Trả nợ" sub="Theo dõi công nợ nhà cung cấp và lập phiếu thanh toán" />
-    <div className="flex items-center justify-between mb-4"><div className="inline-flex bg-white border border-slate-200 rounded-lg p-0.5">{[['all', 'Tất cả'], ['debt', 'Còn nợ'], ['done', 'Đã thanh toán hết']].map(([k, l]) => <button key={k} type="button" onClick={() => setF(k)} className={`px-4 py-2 rounded-md text-sm font-semibold ${f === k ? 'bg-ink text-white' : 'text-slate-600'}`}>{l}</button>)}</div>
-      <label className="relative w-72"><Search className="w-4 h-4 absolute left-3.5 top-3.5 text-slate-400" /><input className="field !pl-10 !h-11" placeholder="Tìm theo tên / mã NCC" value={q} onChange={e => setQ(e.target.value)} /></label></div>
-    <Card className="overflow-hidden"><table className="w-full text-sm"><thead><tr className="border-b bg-slate-50/60 text-xs tracking-wide text-slate-500 uppercase">{['Nhà cung cấp', 'Tổng phát sinh', 'Trả lại hàng mua', 'Đã thanh toán', 'Còn nợ', 'Hành động'].map((h, i) => <th key={h} className={`px-5 py-3.5 font-semibold ${i ? 'text-right' : 'text-left'}`}>{h}</th>)}</tr></thead>
+    <div className="flex items-center justify-between mb-4 max-md:flex-col max-md:items-stretch max-md:gap-3"><div className="inline-flex bg-white border border-slate-200 rounded-lg p-0.5">{[['all', 'Tất cả'], ['debt', 'Còn nợ'], ['done', 'Đã thanh toán hết']].map(([k, l]) => <button key={k} type="button" onClick={() => setF(k)} className={`px-4 max-md:px-1 max-md:flex-1 max-md:text-[13px] py-2 rounded-md text-sm font-semibold ${f === k ? 'bg-ink text-white' : 'text-slate-600'}`}>{l}</button>)}</div>
+      <label className="relative w-72 max-md:w-full"><Search className="w-4 h-4 absolute left-3.5 top-3.5 text-slate-400" /><input className="field !pl-10 !h-11" placeholder="Tìm theo tên / mã NCC" value={q} onChange={e => setQ(e.target.value)} /></label></div>
+    <div className="md:hidden space-y-3">{rows.map(d => <div key={d.x.id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+      <div className="flex items-start justify-between gap-3"><div className="min-w-0"><b className="text-ink break-words">{d.x.name}</b><div className="text-xs text-slate-400">{d.x.code}</div></div><b className={d.left > 0 ? 'text-red-700' : 'text-slate-500'}>{vnd(d.left)}</b></div>
+      <div className="mt-3 rounded-xl bg-slate-50 p-3 space-y-1.5 text-sm">{[['Tổng phát sinh', d.total], ['Trả lại hàng mua', d.ret], ['Đã thanh toán', d.paid]].map(([k, v]) => <div key={k} className="flex justify-between"><span className="text-xs text-slate-400 uppercase">{k}</span><span>{vnd(v)}</span></div>)}</div>
+      <div className="mt-3 grid grid-cols-2 gap-2"><Btn disabled={d.left <= 0} onClick={() => setPay({ sup: d.x.id, name: d.x.name, left: d.left, amt: String(d.left), date: ymd(new Date()), method: 'Chuyển khoản', note: '' })}>Thanh toán</Btn><Btn kind="ghost" onClick={() => setHist(d.x)}>Lịch sử</Btn></div>
+      <button type="button" className="mt-2 w-full text-sm text-slate-500 py-2 inline-flex items-center justify-center gap-1" onClick={() => setOpen(open === d.x.id ? null : d.x.id)}>{open === d.x.id ? 'Ẩn phát sinh' : 'Xem phát sinh'}{open === d.x.id ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}</button>
+      {open === d.x.id && <div className="border-t divide-y text-xs">{detail(d.x.id).map((e, i) => <div key={i} className="py-2 flex justify-between gap-2"><span><b className="font-medium text-ink">{e.t}</b> · {e.no}<div className="text-slate-400">{dmy(e.date)}</div></span><span className="font-medium">{e.amt < 0 ? '−' : ''}{vnd(Math.abs(e.amt))}</span></div>)}{!detail(d.x.id).length && <p className="py-2 text-slate-400">Chưa có phát sinh</p>}</div>}</div>)}
+      {!rows.length && <p className="text-center text-slate-400 py-10">Không có nhà cung cấp phù hợp</p>}</div>
+    <Card className="overflow-hidden max-md:hidden"><table className="w-full text-sm"><thead><tr className="border-b bg-slate-50/60 text-xs tracking-wide text-slate-500 uppercase">{['Nhà cung cấp', 'Tổng phát sinh', 'Trả lại hàng mua', 'Đã thanh toán', 'Còn nợ', 'Hành động'].map((h, i) => <th key={h} className={`px-5 py-3.5 font-semibold ${i ? 'text-right' : 'text-left'}`}>{h}</th>)}</tr></thead>
       <tbody>{rows.map(d => [<tr key={d.x.id} className="border-b hover:bg-slate-50/70"><td className="px-5 py-3.5"><button type="button" className="flex items-center gap-3 text-left" onClick={() => setOpen(open === d.x.id ? null : d.x.id)}>{open === d.x.id ? <ChevronDown className="w-4 h-4 text-slate-400" /> : <ChevronRight className="w-4 h-4 text-slate-400" />}<div><div className="font-semibold text-ink">{d.x.name}</div><div className="text-xs text-slate-400">{d.x.code}</div></div></button></td>
           <td className="px-5 text-right">{vnd(d.total)}</td><td className="px-5 text-right text-slate-400">{vnd(d.ret)}</td><td className="px-5 text-right text-slate-500">{vnd(d.paid)}</td><td className={`px-5 text-right font-bold ${d.left > 0 ? 'text-red-700' : 'text-slate-500'}`}>{vnd(d.left)}</td>
           <td className="px-5"><div className="flex justify-end gap-2"><Btn disabled={d.left <= 0} className="!py-1.5" onClick={() => setPay({ sup: d.x.id, name: d.x.name, left: d.left, amt: String(d.left), date: ymd(new Date()), method: 'Chuyển khoản', note: '' })}><Wallet className="w-4 h-4 mr-1.5 inline" />Thanh toán</Btn>
@@ -138,7 +145,8 @@ function Debts() {
       <div className="flex justify-end mt-5"><Btn kind="ghost" onClick={() => setHist(null)}>Đóng</Btn></div></Modal>}</>;
 }
 
+const PTABS = [['b', 'Báo hàng'], ['o', 'Đặt hàng'], ['r', 'Nhập hàng'], ['t', 'Trả lại hàng mua'], ['d', 'Trả nợ']];
 export default function Purchasing() {
   const [tab, setTab] = useState('b'), P = { b: Reports, o: Orders, r: Receipts, t: Returns, d: Debts }[tab];
-  return <><Underline items={[['b', 'Báo hàng'], ['o', 'Đặt hàng'], ['r', 'Nhập hàng'], ['t', 'Trả lại hàng mua'], ['d', 'Trả nợ']]} value={tab} onChange={setTab} /><P /></>;
+  return <><div className="max-md:hidden"><Underline items={PTABS} value={tab} onChange={setTab} /></div><SheetTabs items={PTABS} value={tab} onChange={setTab} /><P /></>;
 }

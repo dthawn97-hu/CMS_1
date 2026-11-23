@@ -65,6 +65,20 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-
   [class^="w-["], [class*=" w-["] { max-width: calc(100vw - 1.5rem); }
   .field, select, input, textarea { font-size: 16px; } /* tránh iOS tự zoom khi focus */
   .st { max-width: 100%; }
+  /* tiêu đề trang thống nhất trên điện thoại: thanh xanh + chữ vừa + mô tả nhỏ */
+  main h1[class] { font-size: 1.125rem; font-weight: 600; letter-spacing: 0; line-height: 1.4; position: relative; padding-left: .8rem; }
+  main h1[class]::before { content: ''; position: absolute; left: 0; top: .2em; bottom: .2em; width: 3px; border-radius: 3px; background: linear-gradient(#2bb3c6, #0f7c8c); }
+  main h1[class] + p { font-size: .875rem; margin-top: .2rem; }
+  /* tiêu đề trang trong Cài đặt: cùng kiểu với 'Cấu hình thẻ đặt phòng' (thanh xanh + chữ vừa) */
+  .st h1 { font-size: 1.125rem; font-weight: 600; letter-spacing: 0; line-height: 1.4; position: relative; padding-left: .8rem; }
+  .st h1::before { content: ''; position: absolute; left: 0; top: .2em; bottom: .2em; width: 3px; border-radius: 3px; background: linear-gradient(#2bb3c6, #0f7c8c); }
+  .st h1 + p { font-size: .875rem; margin-top: .2rem; }
+  /* ô ngày: luôn hiện dd/mm/yyyy ngắn gọn (iOS tiếng Việt hiện 'ngày 23 thg 11, 2026' rất dài) */
+  input[type=date] { -webkit-appearance: none; appearance: none; min-width: 0; }
+  input[type=date]::-webkit-datetime-edit, input[type=date]::-webkit-date-and-time-value { display: none; }
+  input[type=date]::-webkit-calendar-picker-indicator { display: none; }
+  input[type=date]::before { content: attr(data-d); display: block; white-space: nowrap; line-height: 1.5rem; text-align: left; }
+  input[type=date][data-e]::before { color: #94a3b8; }
 }
 .no-sb { scrollbar-width: none; }
 .no-sb::-webkit-scrollbar { display: none; }

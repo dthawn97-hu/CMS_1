@@ -3,6 +3,7 @@ import { CalendarCheck, Plus, Search, Trash2, ArrowLeft, ChevronRight, Eye, User
 import { Btn, Card, Select, toast } from '../ui.jsx';
 
 // ponytail: dữ liệu chỉ nằm trong state của trang (PMS chưa có backend) — nối API/DB khi có PMS
+const MobHead = ({ t, sub }) => <div className="md:hidden mb-4"><h1 className="font-serif text-ink">{t}</h1><p className="text-slate-500">{sub}</p></div>;
 const SIDE = 'block w-full text-left px-4 py-3 rounded-lg text-sm border-l-4';
 const side = on => `${SIDE} ${on ? 'bg-slate-100 text-ink font-semibold border-ink' : 'text-slate-500 border-transparent hover:bg-slate-50'}`;
 const Lbl = ({ l, req, children, className = '' }) => <label className={`block ${className}`}><span className="block font-semibold text-ink mb-1.5">{l}{req && <span className="text-red-500"> *</span>}</span>{children}</label>;
@@ -78,7 +79,8 @@ export function Sources() {
   const [src, setSrc] = useState(() => ({ OTA: OTA.map(n => ({ n })) })), [g, setG] = useState('OTA'), [sel, setSel] = useState(0), [q, setQ] = useState(''), [off, setOff] = useState({}), [det, setDet] = useState(false);
   const list = src[g] ?? [], cur = list[sel], upd = p => setSrc({ ...src, [g]: list.map((s, i) => i === sel ? { ...s, ...p } : s) });
   const shown = list.map((s, i) => [s, i]).filter(([s]) => s.n.toLowerCase().includes(q.toLowerCase()));
-  return <div className="grid grid-cols-[340px_1fr] max-md:grid-cols-1 gap-5 items-start">
+  return <><div className={det ? 'hidden' : ''}><MobHead t="Nhóm nguồn" sub="Quản lý nguồn đặt phòng theo từng nhóm để lọc và thống kê booking." /></div>
+  <div className="grid grid-cols-[340px_1fr] max-md:grid-cols-1 gap-5 items-start">
     <Card className={`max-h-[640px] max-md:max-h-none overflow-y-auto ${det ? 'max-md:hidden' : ''}`}><div className="sticky top-0 bg-white border-b p-2 space-y-2">
       <Select className="[&_.field]:font-semibold" f={{ v: { g }, set: (k, x) => { setG(x); setSel(0); setQ(''); } }} k="g" opts={GROUPS.map(([n]) => [n, `${n} (${(src[n] ?? []).length})`])} /><label className="relative block"><Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" /><input className="field !pl-9" placeholder={`Lọc nguồn trong ${g}`} value={q} onChange={e => setQ(e.target.value)} /></label>
       <Btn kind="ghost" className="w-full justify-center" onClick={() => { setSrc({ ...src, [g]: [...list, { n: 'Nguồn mới' }] }); setSel(list.length); setQ(''); setDet(true); }}><Plus className="w-4 h-4 mr-1 inline" />Thêm {g}</Btn></div>
@@ -94,14 +96,15 @@ export function Sources() {
         <Lbl l="Địa chỉ liên hệ" className="md:col-span-2"><textarea rows={3} className="field" value={cur.addr ?? ''} onChange={e => upd({ addr: e.target.value })} /></Lbl>
         <Lbl l="Mô tả" className="md:col-span-2"><textarea rows={3} className="field" value={cur.desc ?? ''} onChange={e => upd({ desc: e.target.value })} /></Lbl></div>
       <div className="flex gap-2 mt-5 max-md:[&>button]:flex-1"><Btn onClick={() => toast('Đã lưu thay đổi')}>Lưu thay đổi</Btn><Btn kind="ghost" onClick={() => { setOff({ ...off, [g + cur.n]: !off[g + cur.n] }); toast(off[g + cur.n] ? 'Đã kích hoạt lại' : 'Đã vô hiệu hóa'); }}>{off[g + cur.n] ? 'Kích hoạt' : 'Vô hiệu hóa'}</Btn></div></>
-      : <p className="text-center text-slate-400 py-16">Chọn hoặc thêm một nguồn</p>}</Card></div>;
+      : <p className="text-center text-slate-400 py-16">Chọn hoặc thêm một nguồn</p>}</Card></div></>;
 }
 
 const SEGS = ['Gia đình', 'Công tác', 'Nhóm'];
 export function Segments() {
   const [list, setList] = useState([...SEGS.map(n => ({ n, def: true }))]), [sel, setSel] = useState(0), [det, setDet] = useState(false), cur = list[sel];
   const upd = p => setList(list.map((s, i) => i === sel ? { ...s, ...p } : s));
-  return <div className="grid grid-cols-[320px_1fr] max-md:grid-cols-1 gap-4 items-start">
+  return <><div className={det ? 'hidden' : ''}><MobHead t="Phân khúc khách hàng" sub="Quản lý các phân khúc dùng để phân loại khách trong booking." /></div>
+  <div className="grid grid-cols-[320px_1fr] max-md:grid-cols-1 gap-4 items-start">
     <Card className={det ? 'max-md:hidden' : ''}><div className="p-2 border-b"><Btn kind="ghost" className="w-full justify-center" onClick={() => { setList([...list, { n: 'Phân khúc mới' }]); setSel(list.length); setDet(true); }}><Plus className="w-4 h-4 mr-1 inline" />Thêm phân khúc</Btn></div>
       {list.map((s, i) => <button key={i} type="button" onClick={() => { setSel(i); setDet(true); }} className={`w-full text-left px-4 py-3 border-b last:border-b-0 border-l-4 ${i === sel ? 'bg-slate-100 max-md:bg-brand/10 border-l-ink max-md:border-l-brand' : 'border-l-transparent hover:bg-slate-50'}`}>
         <div className="flex justify-between"><b className="font-medium">{s.n}</b>{s.def && <span className="text-[10px] px-1.5 rounded bg-slate-100 border">Mặc định</span>}</div><div className="text-[11px] text-slate-400">Nhóm phân khúc khách hàng</div></button>)}</Card>
@@ -109,7 +112,7 @@ export function Segments() {
       <Lbl l="Tên phân khúc" req><input className="field" value={cur.n} onChange={e => upd({ n: e.target.value })} /></Lbl>
       <Lbl l="Mã phân khúc"><input disabled className="field" value={slug(cur.n)} /></Lbl>
       <Lbl l="Mô tả"><textarea rows={3} className="field" placeholder="Mô tả ngắn về phân khúc này (tùy chọn)" value={cur.d ?? ''} onChange={e => upd({ d: e.target.value })} /></Lbl>
-      <Btn className="max-md:w-full" onClick={() => toast('Đã lưu thay đổi')}>Lưu thay đổi</Btn></div></Card></div>;
+      <Btn className="max-md:w-full" onClick={() => toast('Đã lưu thay đổi')}>Lưu thay đổi</Btn></div></Card></div></>;
 }
 
 /* ---- Phân loại khách hàng (hạng theo số lượt lưu trú) ---- */

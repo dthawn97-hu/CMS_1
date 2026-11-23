@@ -34,7 +34,7 @@ const KINDS = { dark: 'bg-ink text-white', ghost: 'bg-white border border-slate-
 export const Btn = ({ kind = 'dark', type = 'button', className = '', ...p }) =>
   <button type={type} {...p} className={`${KINDS[kind]} rounded-lg px-4 py-2.5 font-semibold text-sm hover:opacity-90 hover:shadow-sm disabled:opacity-40 disabled:pointer-events-none whitespace-nowrap ${className}`} />;
 // Trang danh sách: bỏ tiêu đề (giống Bán phòng), chỉ giữ nút hành động bên phải. Trang form dùng keep để giữ tiêu đề.
-export const Title = ({ t, sub, right, keep }) => !keep ? (right ? <div className="flex justify-end mb-4">{right}</div> : null) : <div className="flex justify-between items-start mb-6">
+export const Title = ({ t, sub, right, keep }) => !keep ? (right ? <div className="flex justify-end mb-4">{right}</div> : null) : <div className="flex justify-between items-start mb-6 max-md:mb-4 max-md:flex-wrap max-md:gap-x-3 max-md:gap-y-2">
   <div><h1 className="font-serif text-3xl font-bold text-ink">{t}</h1><p className="text-slate-500 mt-1">{sub}</p></div>{right}</div>;
 export const Card = ({ className = '', ...p }) => <div {...p} className={`bg-white border border-slate-200 rounded-xl ${className}`} />;
 export const H2 = ({ children }) => <h3 className="font-serif font-bold text-ink text-base mb-3">{children}</h3>;
@@ -133,7 +133,13 @@ export function MobileDatePicker() {
   useEffect(() => {
     const h = e => { const el = e.target; if (!(el instanceof HTMLInputElement) || el.type !== 'date' || el.disabled || el.readOnly || !window.matchMedia('(max-width:767px)').matches) return;
       e.preventDefault(); e.stopPropagation(); el.blur(); const v = el.value ? new Date(el.value + 'T00:00:00') : new Date(); setMo(new Date(v.getFullYear(), v.getMonth(), 1)); setSt({ el, v: el.value, min: el.min, max: el.max }); };
-    document.addEventListener('click', h, true); return () => document.removeEventListener('click', h, true);
+    document.addEventListener('click', h, true);
+    // luôn hiển thị dd/mm/yyyy (CSS đọc data-d) — không phụ thuộc ngôn ngữ hệ điều hành
+    const fmt = el => { const d = el.value ? el.value.split('-').reverse().join('/') : 'dd/mm/yyyy'; if (el.dataset.d !== d) el.dataset.d = d; el.toggleAttribute('data-e', !el.value); };
+    const sync = () => document.querySelectorAll('input[type=date]').forEach(fmt);
+    sync(); const mo = new MutationObserver(sync); mo.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['value'] });
+    document.addEventListener('input', sync, true); document.addEventListener('change', sync, true);
+    return () => { document.removeEventListener('click', h, true); mo.disconnect(); document.removeEventListener('input', sync, true); document.removeEventListener('change', sync, true); };
   }, []);
   if (!st) return null;
   const y = mo.getFullYear(), m = mo.getMonth(), lead = (new Date(y, m, 1).getDay() + 6) % 7, days = new Date(y, m + 1, 0).getDate(), today = iso(new Date());
@@ -165,4 +171,13 @@ export function MobileSelectSheet() {
   return createPortal(<><div className="fixed inset-0 bg-black/40 z-[60] anim-fade" onClick={() => setSt(null)} />
     <div className="fixed inset-x-0 bottom-0 z-[61] max-h-[70vh] overflow-y-auto rounded-t-2xl bg-white p-3 pb-6 shadow-2xl anim-rise"><div className="mx-auto mb-2 h-1 w-10 rounded-full bg-slate-200" />{st.title && <div className="px-3 pb-2 text-sm font-semibold text-ink">{st.title}</div>}
       {st.opts.map(o => { const on = o.v === st.v; return <button key={o.v} type="button" disabled={o.d} onClick={() => pick(o.v)} className={`w-full flex items-center justify-between gap-3 px-3 py-3 rounded-xl text-[15px] text-left disabled:opacity-40 ${on ? 'bg-brand/10 text-brand-dark font-semibold' : 'text-slate-700'}`}><span>{o.t}</span>{on && <span>✓</span>}</button>; })}</div></>, document.body);
+}
+
+/* Chọn mục kiểu "Cài đặt" cho điện thoại: nhãn bo tròn + bảng trượt từ đáy (thay cho hàng tab chật) */
+export function SheetTabs({ items, value, onChange }) {
+  const [open, setOpen] = useState(false), cur = items.find(([k]) => k === value);
+  return <div className="md:hidden mb-4"><button type="button" onClick={() => setOpen(true)} className="inline-flex items-center gap-1.5 rounded-full bg-brand/10 text-brand-dark font-semibold pl-4 pr-3 py-2 max-w-full"><span className="truncate">{cur?.[1]}</span><ChevronDown className="w-4 h-4 shrink-0" /></button>
+    {open && createPortal(<><div className="fixed inset-0 bg-black/40 z-[60] anim-fade" onClick={() => setOpen(false)} />
+      <div className="fixed inset-x-0 bottom-0 z-[61] max-h-[70vh] overflow-y-auto rounded-t-2xl bg-white p-3 pb-6 shadow-2xl anim-rise"><div className="mx-auto mb-2 h-1 w-10 rounded-full bg-slate-200" />
+        {items.map(([k, l]) => { const on = k === value; return <button key={k} type="button" onClick={() => { onChange(k); setOpen(false); }} className={`w-full flex items-center justify-between gap-3 px-3 py-3.5 rounded-xl text-[15px] text-left ${on ? 'bg-brand/10 text-brand-dark font-semibold' : 'text-slate-700'}`}><span>{l}</span>{on && <span>✓</span>}</button>; })}</div></>, document.body)}</div>;
 }
