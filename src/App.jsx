@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, NavLink, Route, Routes, Navigate, useLocation } from 'react-router-dom';
-import { CalendarCheck, LayoutGrid, Users, BedDouble, UtensilsCrossed, ShoppingCart, ClipboardList, BarChart3, LayoutDashboard, Briefcase, Wallet, SlidersHorizontal, Package, PanelLeft, Bell, LogOut, UserRound, BellRing, Building2, CalendarDays, ChevronDown, ChevronRight, Inbox, Link2, TrendingUp } from 'lucide-react';
+import { CalendarCheck, Map as MapIcon, LayoutGrid, Users, BedDouble, UtensilsCrossed, ShoppingCart, ClipboardList, BarChart3, LayoutDashboard, Briefcase, Wallet, SlidersHorizontal, Package, PanelLeft, Bell, LogOut, UserRound, BellRing, Building2, CalendarDays, ChevronDown, ChevronRight, Inbox, Link2, TrendingUp } from 'lucide-react';
 import { DBProvider, useDB } from './store.jsx';
 import { Toaster, MobileDatePicker, MobileSelectSheet, ask, toast } from './ui.jsx';
 import { Sales, Bulk } from './pages/Calendar.jsx';
@@ -33,15 +33,15 @@ import { Account, Hotel, Rooms, RoomForm, Policies, PolicyForm } from './pages/C
 
 const sub = (p, a) => a.map(t => [t, p + '/' + t.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd').replace(/[^a-z]+/g, '-').replace(/-$/, '')]);
 const PMS_OPS = sub('/pms', ['Front desk', 'Sơ đồ phòng', 'Đặt phòng', 'Quản lý khách', 'Buồng phòng', 'F&B', 'Quản lý kho', 'Bán hàng & Marketing']),
-  FIN_T = sub('/pms/tai-chinh', ['Hóa đơn', 'Hóa đơn điện tử', 'Cấu hình Thu/Chi', 'Sổ sách', 'Quỹ tiền mặt', 'Quỹ tiền gửi']), FIN_A = sub('/pms/phan-tich', ['Thống kê chung', 'Thống kê vận hành', 'Doanh thu', 'Báo cáo']), SHIFT = ['/pms/ban-giao-ca'], GUESTS = sub('/pms/quan-ly-khach', ['Danh sách khách', 'Danh sách đoàn']), STOCK = sub('/pms/quan-ly-kho', ['Cấu hình kho', 'Quản lý kho', 'Quản lý mua hàng']),
+  FIN_T = sub('/pms/tai-chinh', ['Hóa đơn', 'Hóa đơn điện tử', 'Cấu hình Thu/Chi', 'Báo cáo tài chính', 'Quỹ tiền mặt', 'Quỹ tiền gửi']), FIN_A = sub('/pms/phan-tich', ['Thống kê chung', 'Thống kê vận hành', 'Doanh thu', 'Báo cáo']), SHIFT = ['/pms/ban-giao-ca'], GUESTS = sub('/pms/quan-ly-khach', ['Danh sách khách', 'Danh sách đoàn']), STOCK = sub('/pms/quan-ly-kho', ['Cấu hình kho', 'Quản lý kho', 'Quản lý mua hàng']),
   SALES = [['Tạo hóa đơn', '/pms/ban-hang/tao-hoa-don'], ['Tiếp thị Email', [['Chiến dịch Email', '/pms/ban-hang/email/chien-dich'], ['Lịch sử', '/pms/ban-hang/email/lich-su'], ['Cấu hình', '/pms/ban-hang/email/cau-hinh']]]];
 const leaves = x => x.flatMap(k => Array.isArray(k[1]) ? leaves(k[1]) : [k[1]]);
 // Navbar 3 phần: mở (Tổng quan) · thân (PMS + CMS) · kết (Cấu hình)
 const NAV = [
   [null, [['Tổng quan', LayoutDashboard, '/overview']]],
-  ['PMS - VẬN HÀNH', [['Front Desk', CalendarCheck, PMS_OPS[0][1]], ['Sơ đồ phòng', LayoutGrid, PMS_OPS[1][1]], ['Đặt phòng', ClipboardList, PMS_OPS[2][1]], ['Quản lý khách', Users, GUESTS], ['Buồng phòng', BedDouble, PMS_OPS[4][1]], ['F&B', UtensilsCrossed, PMS_OPS[5][1]], ['Quản lý kho', Package, STOCK], ['Bán hàng & Marketing', ShoppingCart, SALES]]],
+  ['PMS - VẬN HÀNH', [['Front Desk', CalendarCheck, PMS_OPS[0][1]], ['Sơ đồ phòng', MapIcon, PMS_OPS[1][1]], ['Đặt phòng', ClipboardList, PMS_OPS[2][1]], ['Quản lý khách', Users, GUESTS], ['Buồng phòng', BedDouble, PMS_OPS[4][1]], ['F&B', UtensilsCrossed, PMS_OPS[5][1]], ['Quản lý kho', Package, STOCK], ['Bán hàng & Marketing', ShoppingCart, SALES]]],
   ['TÀI CHÍNH & BÁO CÁO', [['Tài chính', Wallet, FIN_T], ['Bàn giao ca', ClipboardList, SHIFT[0]], ['Phân tích', BarChart3, FIN_A]]],
-  ['CMS', [['Lịch phòng', CalendarDays, [['Bán phòng', '/sales'], ['Cập nhật hàng loạt', '/bulk']]],
+  ['BELLHOP EXTRANET', [['Lịch phòng', CalendarDays, [['Bán phòng', '/sales'], ['Cập nhật hàng loạt', '/bulk']]],
     ['Đặt phòng OTA', Inbox, '/booking'], ['Đồng bộ CMS', Link2, '/sync'],
     ['Quản lý doanh thu', TrendingUp, [['Chính sách giá OTA', '/policies'], ['Giá thông minh', '/smart'], ['Định giá linh động', '/dynamic']]]]],
   ['CẤU HÌNH', [['Cài đặt', SlidersHorizontal, '/hotel', SETTINGS_PATHS], ["Gói dịch vụ", Package, "/plans"]], true]

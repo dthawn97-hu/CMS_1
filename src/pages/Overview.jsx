@@ -27,7 +27,7 @@ export default function Overview() {
   const newOta = RAW.filter(r => r[5] === 'Mới').length, offline = db.channels.filter(c => c.active && !c.connected).length,
     low = s.mats.filter(m => m.min > 0 && s.whs.reduce((a, w) => a + stockOf(s, w.id, m.id), 0) < m.min).length, debt = s.sups.reduce((a, x) => a + Math.max(0, debtOf(s, x.id).left), 0);
   const days = Array.from({ length: 7 }, (_, i) => addDays(TODAY, i - 6)).map(d => ({ d, v: revOf(d) })), maxD = Math.max(...days.map(x => x.v)), week = days.reduce((a, x) => a + x.v, 0), month = Array.from({ length: +TODAY.slice(8) }, (_, i) => revOf(TODAY.slice(0, 8) + String(i + 1).padStart(2, '0'))).reduce((a, b) => a + b, 0);
-  const chan = [['Trực tiếp (PMS)', 0.46], ['Booking.com', 0.24], ['Agoda', 0.15], ['Trip.com', 0.1], ['Khác', 0.05]].map(([l, p]) => [l, Math.round(month * p)]), direct = 18, ota = RAW.filter(r => r[5] !== 'Đã huỷ').length + 9;
+  const chan = [['Agoda', 0.654, '#e91e63'], ['Expedia', 0.237, '#fdc52b'], ['CTrip / Trip.com', 0.109, '#475569']].map(([l, p, c]) => [l, Math.round(month * p), c, p]), cg = chan.reduce((a, [, , c, p]) => { const f = a.at; a.at += p * 100; a.s.push(`${c} ${f}% ${a.at}%`); return a; }, { at: 0, s: [] }).s.join(','), direct = 18, ota = RAW.filter(r => r[5] !== 'Đã huỷ').length + 9;
   const cash = id => fin.base[id] + fin.vouchers.filter(v => v.fund === id).reduce((a, v) => a + (v.type === 'thu' ? v.amount : -v.amount), 0), dow = d => ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'][new Date(d + 'T00:00').getDay()];
   const upcoming = RAW.filter(r => r[5] !== 'Đã huỷ').sort((a, b) => a[3].localeCompare(b[3])).slice(0, 3);
   return <>
@@ -38,8 +38,10 @@ export default function Overview() {
       <Card className="p-4 lg:p-6"><div className="flex items-baseline justify-between mb-5"><h3 className="font-semibold text-ink">Doanh thu 7 ngày gần nhất</h3><span className="text-xs text-slate-400">Đơn vị: triệu đồng</span></div>
         <div className="flex items-end gap-1.5 lg:gap-3 h-60">{days.map(x => <div key={x.d} className="flex-1 flex flex-col items-center justify-end h-full gap-1.5" title={`${dow(x.d)} ${x.d.slice(8)}/${x.d.slice(5, 7)}: ${vnd(x.v)}`}><span className="text-xs font-semibold text-ink">{(x.v / 1e6).toFixed(1)}</span><div className={`w-full rounded-t-md ${x.d === TODAY ? 'bg-brand-dark' : 'bg-brand/40'}`} style={{ height: `${x.v / maxD * 100 * 0.78}%` }} /></div>)}</div>
         <div className="flex gap-1.5 lg:gap-3 mt-2">{days.map(x => <span key={x.d} className={`flex-1 text-center text-xs leading-tight ${x.d === TODAY ? 'font-semibold text-ink' : 'text-slate-500'}`}>{dow(x.d)}<br className="lg:hidden" /><span className="hidden lg:inline"> </span>{x.d.slice(8)}</span>)}</div></Card>
-      <Card className="p-4 lg:p-6"><h3 className="font-semibold text-ink mb-4">Doanh thu tháng này theo nguồn khách</h3>{chan.map(([l, v]) => <Bar key={l} l={l} v={v} max={chan[0][1]} sub={`${tr(v)} · ${Math.round(v / month * 100)}%`} />)}
-        </Card></div>
+      <Card className="p-4 lg:p-6"><h3 className="font-semibold text-ink">Nguồn đặt phòng</h3><p className="text-sm text-slate-500 mb-4">MTD · tỉ lệ doanh thu theo kênh</p>
+        <div className="mx-auto w-44 h-44 rounded-full grid place-items-center mb-5" style={{ background: `conic-gradient(${cg})` }}><div className="w-[60%] h-[60%] rounded-full bg-white" /></div>
+        {chan.map(([l, v, c, p]) => <div key={l} className="flex items-center gap-3 py-1.5 text-sm" title={tr(v)}><span className="w-3 h-3 rounded-full" style={{ background: c }} /><span className="flex-1 text-ink">{l}</span><span className="font-mono text-slate-500">{(p * 100).toFixed(1)}%</span></div>)}
+      </Card></div>
     <H>Tiền và công nợ</H>
     <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4 mb-8"><Kpi l="Tiền mặt trong quỹ" v={vnd(cash('cash'))} n="Theo sổ quỹ tiền mặt" /><Kpi l="Tiền gửi ngân hàng" v={vnd(cash('bank'))} n="Theo sổ quỹ tiền gửi" /><Kpi l="Còn nợ nhà cung cấp" v={vnd(debt)} n="Cần thanh toán" /></div>
     <div className="grid lg:grid-cols-[1fr_1.3fr] gap-5 mb-8">
