@@ -73,7 +73,7 @@ export function Sales() {
   const openOf = (r, d, cid, pid) => val(`${r.id}|${d}|s|${pid}@${cid}`, isOpen(db, r, d, cid, pid));
   const priceTds = (r, p, f, cid) => days.map(d => { const open = openOf(r, d, cid, p.id);
     return <td key={d} title={open ? undefined : 'Ngừng bán'} className={`${TD} font-semibold ${open ? tint(r, d) : 'bg-red-200'}`}>{show.includes('price') && (f
-      ? <span title="Giá thông minh — tự tính từ B, không chỉnh sửa" className={`block leading-10 cursor-default ${open ? '' : 'text-red-800'}`}>{money(smartPrice(db, f, r, d, cid, p.id))}</span>
+      ? <span title="Giá Liên Kết — tự tính từ B, không chỉnh sửa" className={`block leading-10 cursor-default ${open ? '' : 'text-red-800'}`}>{money(smartPrice(db, f, r, d, cid, p.id))}</span>
       : <button type="button" title="Bấm để chỉnh sửa" onClick={() => setQuick({ r, p, cid, d })} className={`block w-full h-10 font-semibold hover:bg-white/70 hover:ring-1 hover:ring-inset hover:ring-ink/30 ${open ? '' : 'text-red-800'}`}>{money(basePrice(db, r, d, cid))}</button>)}</td>; });
   const extraTds = (r, p, cid, k, type) => days.map(d => {
     if (k === 'stop') { const key = `${r.id}|${d}|s|${p.id}@${cid}`, open = openOf(r, d, cid, p.id);
@@ -83,7 +83,7 @@ export function Sales() {
     return <td key={d} className={`${TD} ${tint(r, d)}`}>{type === 'bool'
       ? <input type="checkbox" className="rounded align-middle" checked={!!val(key, !!limitOf(db, r, d, k, cid, p.id))} onChange={e => setP(key, e.target.checked)} />
       : cell(key, limitOf(db, r, d, k, cid, p.id) ?? '', '', '—')}</td>; });
-  const badge = f => <span className={`mr-1.5 px-1.5 rounded text-white text-[11px] ${f ? 'bg-slate-500' : 'bg-ink'}`} title={f ? 'Giá thông minh: tính từ B' : 'Giá gốc'}>{f ? 'S' : 'B'}</span>;
+  const badge = f => <span className={`mr-1.5 px-1.5 rounded text-white text-[11px] ${f ? 'bg-slate-500' : 'bg-ink'}`} title={f ? 'Giá Liên Kết: tính từ B' : 'Giá gốc'}>{f ? 'S' : 'B'}</span>;
   const save = async () => {
     const keys = Object.keys(pend); if (!keys.length) return toast('Không có thay đổi');
     const cal = structuredClone(db.cal);
@@ -92,7 +92,7 @@ export function Sales() {
       else c.s[x] = !v; });
     await commit('cal', cal); setPend({}); toast(`Đã lưu ${keys.length} thay đổi`);
   };
-  const ch = view === 'channel', lead = mob ? 170 : ch ? c1 + c2 : 340;
+  const ch = view === 'channel', lead = mob ? 88 : ch ? c1 + c2 : 340; // điện thoại: cột tên chỉ ~1/4 màn, nhường chỗ cho các ngày
   return <div className="h-[calc(100dvh-80px)] sm:h-[calc(100dvh-96px)] lg:h-[calc(100vh-125px)] flex flex-col min-w-0 max-w-full overflow-x-hidden">
     <div className="flex items-center gap-2 lg:gap-3 mb-3 flex-wrap"><Seg className="max-md:basis-full" value={view} onChange={setView} items={[["channel", "Theo kênh"], ["policy", "Theo chính sách giá"]]} /><span className="w-px h-6 bg-slate-200 mx-1 max-md:hidden" />
       <Btn kind="ghost" className="max-md:hidden" onClick={() => shift(-1)}><ChevronLeft className="w-4 h-4" /></Btn>
@@ -115,18 +115,19 @@ export function Sales() {
         <th colSpan={ch && !mob ? 2 : 1} className="h-14 px-3 text-left font-medium sticky left-0 top-0 z-40 bg-white">{ch ? 'KÊNH / CHỈ SỐ' : 'LOẠI PHÒNG / CHỈ SỐ'}</th>
         {days.map(d => <th key={d} title={d === today ? 'Hôm nay' : wd(d) > 4 ? 'Thứ 7, CN' : undefined} className={`font-medium sticky top-0 z-30 ${d === today ? 'bg-cyan-100 text-brand-dark' : wd(d) > 4 ? 'bg-amber-100 text-amber-700' : 'bg-white'}`}>{DAYS[wd(d)]}<div className={`text-base font-semibold ${wd(d) > 4 ? '' : 'text-ink'}`}>{+d.slice(8)}</div></th>)}</tr></thead>
       <tbody className="text-sm max-md:text-xs">{rooms.map(r => <Fragment key={r.id}>
-        <tr className="sticky top-[52px] z-20 border-t-2 border-slate-300 bg-white shadow-[0_1px_0_#cbd5e1]"><td colSpan={ch && !mob ? 2 : 1} className={`${LBL} bg-white cursor-pointer select-none`} onClick={() => flip(ch ? 'c' + r.id : r.id)}><Chev k={r.id} down={ch ? !!shut['c' + r.id] : !shut[r.id]} /><b className="text-ink text-[15px]">{r.ten_phong_vi}</b> <span className="text-slate-500">· {r.so_luong_phong} phòng</span><button type="button" title="Cập nhật phòng trống hàng loạt" className="ml-1.5 align-middle text-slate-400 hover:text-ink" onClick={e => { e.stopPropagation(); nav('/bulk', { state: { rid: r.id, tab: 'avail' } }); }}><Pencil className="inline w-3.5 h-3.5" /></button></td>
+        <tr className="md:hidden border-t-2 border-slate-300"><td className="px-1.5 py-0.5 sticky left-0 z-10 bg-slate-100 text-[10px] leading-tight font-semibold text-slate-600">{r.ten_phong_vi}</td>{days.map(d => <td key={d} className={`${TD} bg-slate-100 h-7 text-xs font-semibold ${sold(r, d) ? 'text-red-700' : 'text-ink'}`}>{availOf(db, r, d)}</td>)}</tr>
+        <tr className="sticky top-[52px] z-20 border-t-2 border-slate-300 bg-white shadow-[0_1px_0_#cbd5e1] max-md:hidden"><td colSpan={ch && !mob ? 2 : 1} className={`${LBL} bg-white cursor-pointer select-none max-md:whitespace-normal max-md:px-1.5 max-md:text-[11px] max-md:leading-tight`} onClick={() => flip(ch ? 'c' + r.id : r.id)}><Chev k={r.id} down={ch ? !!shut['c' + r.id] : !shut[r.id]} /><b className="text-ink text-[15px] max-md:text-xs">{r.ten_phong_vi}</b> <span className="text-slate-500">· {r.so_luong_phong} phòng</span><button type="button" title="Cập nhật phòng trống hàng loạt" className="ml-1.5 align-middle text-slate-400 hover:text-ink max-md:hidden" onClick={e => { e.stopPropagation(); nav('/bulk', { state: { rid: r.id, tab: 'avail' } }); }}><Pencil className="inline w-3.5 h-3.5" /></button></td>
           {days.map(d => { const a = availOf(db, r, d), k = `${r.id}|${d}|a`; return <td key={d} title={sold(r, d) ? 'Hết phòng' : undefined} className={`${TD} `}>{cell(k, a, sold(r, d) ? 'text-red-700 font-bold' : 'font-semibold')}</td>; })}</tr>
-        {shut['c' + r.id] && ch && db.channels.filter(c => cf.includes(c.id)).map(c => { const gs = groups.filter(g => g.chans.includes(c.id)), rows = gs.length * (1 + extras.length);
+        {(shut['c' + r.id] || mob) && ch && db.channels.filter(c => cf.includes(c.id)).map(c => { const gs = groups.filter(g => g.chans.includes(c.id)), rows = gs.length * (1 + extras.length);
           return gs.map(({ p, f }, gi) => <Fragment key={c.id + p.id}>
             <tr className={gi === 0 ? 'border-t border-slate-300' : 'border-t border-slate-100'}>
               {gi === 0 && !mob && <td rowSpan={rows} className="sticky left-0 z-10 bg-white align-top px-3 max-md:px-2 py-2 border-r border-slate-200"><div className="flex items-center gap-1.5"><b className="text-[15px] max-md:text-xs break-words text-slate-800">{c.name}</b><span title={c.connected ? 'Đã kết nối' : 'Chưa kết nối'} className="shrink-0 max-md:hidden">{c.connected ? <Link2 className="w-4 h-4 text-brand-dark" /> : <Unlink className="w-4 h-4 text-slate-300" />}</span></div></td>}
-              <td onClick={() => mob && edit(r, p, f, c.id)} style={{ left: mob ? 0 : c1 - 1 }} className="h-10 px-3 sticky z-10 bg-white whitespace-nowrap max-md:whitespace-normal max-md:leading-tight max-md:px-2 overflow-hidden text-ellipsis border-r border-slate-100">{badge(f)}<span className={mob && gi === 0 ? 'font-bold text-ink' : 'font-medium'}>{mob && gi === 0 ? c.name : 'Giá bán'}</span><EditBtn r={r} p={p} f={f} cid={c.id} /><span className="text-slate-400 max-md:block max-md:text-[11px]"><span className="md:hidden">{p.ten_chinh_sach_gia}</span><span className="max-md:hidden"> · {p.ten_chinh_sach_gia}</span></span></td>
+              <td onClick={() => mob && edit(r, p, f, c.id)} style={{ left: mob ? 0 : c1 - 1 }} className="h-10 px-3 sticky z-10 bg-white whitespace-nowrap max-md:whitespace-normal max-md:h-14 max-md:leading-[1.15] max-md:px-1.5 max-md:text-[11px] max-md:break-words overflow-hidden text-ellipsis border-r border-slate-100">{badge(f)}<span className={mob && gi === 0 ? 'font-bold text-ink' : 'font-medium'}>{mob && gi === 0 ? c.name : 'Giá bán'}</span><EditBtn r={r} p={p} f={f} cid={c.id} /><span className="text-slate-400 max-md:block max-md:text-[10px]"><span className="md:hidden">{p.ten_chinh_sach_gia}</span><span className="max-md:hidden"> · {p.ten_chinh_sach_gia}</span></span></td>
               {priceTds(r, p, f, c.id)}</tr>
-            {extras.map(([k, label, type]) => <tr key={k} className="border-t border-slate-100"><td onClick={() => mob && edit(r, p, f, c.id, k)} style={{ left: mob ? 0 : c1 - 1 }} className="h-10 px-3 sticky z-10 bg-white text-slate-600 whitespace-nowrap max-md:whitespace-normal max-md:leading-tight max-md:px-2 border-r border-slate-100">{label}<EditBtn r={r} p={p} f={f} cid={c.id} lim={k} /></td>{extraTds(r, p, c.id, k, type)}</tr>)}
+            {extras.map(([k, label, type]) => <tr key={k} className="border-t border-slate-100"><td onClick={() => mob && edit(r, p, f, c.id, k)} style={{ left: mob ? 0 : c1 - 1 }} className="h-10 px-3 sticky z-10 bg-white text-slate-600 whitespace-nowrap max-md:whitespace-normal max-md:h-14 max-md:leading-[1.15] max-md:px-1.5 max-md:text-[11px] border-r border-slate-100">{label}<EditBtn r={r} p={p} f={f} cid={c.id} lim={k} /></td>{extraTds(r, p, c.id, k, type)}</tr>)}
           </Fragment>); })}
-        {!shut[r.id] && !ch && groups.map(({ p, f, chans }, gi) => { const c = PAL[gi % PAL.length]; return <Fragment key={p.id}>
-          <tr className={`border-t border-slate-200 ${c.bg}`}><td className={`${LBL} ${c.bg} border-l-4 max-md:border-l-2 ${c.bar} ${c.text} font-bold cursor-pointer select-none`} onClick={() => flip(r.id + p.id)}><Chev k={r.id + p.id} /><span className="max-md:inline-block max-md:max-w-[78px] max-md:truncate max-md:align-bottom">{p.ten_chinh_sach_gia}</span> <span className={`ml-1.5 px-1.5 rounded text-white text-[11px] ${f ? 'bg-slate-500' : 'bg-ink'}`} title={f ? 'Giá thông minh: tính từ B' : 'Giá gốc'}>{f ? 'S' : 'B'}</span><EditBtn keep r={r} p={p} f={f} cid={pch} /></td>
+        {(!shut[r.id] || mob) && !ch && groups.map(({ p, f, chans }, gi) => { const c = PAL[gi % PAL.length]; return <Fragment key={p.id}>
+          <tr className={`border-t border-slate-200 ${c.bg}`}><td className={`${LBL} ${c.bg} border-l-4 max-md:border-l-2 ${c.bar} ${c.text} font-bold cursor-pointer select-none`} onClick={() => flip(r.id + p.id)}><Chev k={r.id + p.id} /><span className="max-md:inline-block max-md:max-w-[78px] max-md:truncate max-md:align-bottom">{p.ten_chinh_sach_gia}</span> <span className={`ml-1.5 px-1.5 rounded text-white text-[11px] ${f ? 'bg-slate-500' : 'bg-ink'}`} title={f ? 'Giá Liên Kết: tính từ B' : 'Giá gốc'}>{f ? 'S' : 'B'}</span><EditBtn keep r={r} p={p} f={f} cid={pch} /></td>
             {days.map(d => <td key={d} />)}</tr>
           {!shut[r.id + p.id] && chans.map(cid => <Fragment key={cid}>
             <tr className="border-t border-slate-100"><td className={`${LBL} bg-white border-l-4 max-md:border-l-2 ${c.bar} pl-6`}><span className={`inline-block w-2 h-2 rounded-full mr-2 ${c.dot}`} /><b className="font-semibold text-slate-800">{db.channels.find(x => x.id === cid).name}</b></td>{priceTds(r, p, f, cid)}</tr>
@@ -194,11 +195,11 @@ export function Bulk() {
   const [rf, setRf] = useState(() => go?.rid ? [go.rid] : db.rooms.map(r => r.id)), [cf, setCf] = useState(() => go?.cid ? [go.cid] : db.channels.map(c => c.id)), [pf, setPf] = useState(() => go?.pid ? [go.pid] : db.policies.map(p => p.id));
   const [from, setFrom] = useState(today), [to, setTo] = useState(addDays(today, 29)), [pFrom, setPFrom] = useState(today), [pTo, setPTo] = useState(addDays(today, 364)), [dowR, setDowR] = useState({}), [shutG, setShutG] = useState({}), [limSel, setLimSel] = useState([go?.lim || 'stop']), [roomClip, setRoomClip] = useState(null);
   // Phòng trống: khoảng ngày dùng chung (đặt ở hạng phòng đầu tiên), số lượng riêng cho từng hạng phòng
-  const [clip, setClip] = useState(null), [mode, setMode] = useState('config'), [shut, setShut] = useState({}), [ovF, setOvF] = useState(today), [ovT, setOvT] = useState(addDays(today, 8));
+  const [risk, setRisk] = useState(null), [agree, setAgree] = useState(false), [clip, setClip] = useState(null), [mode, setMode] = useState('config'), [shut, setShut] = useState({}), [ovF, setOvF] = useState(today), [ovT, setOvT] = useState(addDays(today, 8));
   const std = stdPolicy(db), ovN = Math.min(31, Math.max(1, Math.round((new Date(ovT) - new Date(ovF)) / 864e5) + 1)), ovDays = Array.from({ length: ovN }, (_, i) => addDays(ovF, i));
   const shiftOv = n => { setOvF(addDays(ovF, n * ovN)); setOvT(addDays(ovT, n * ovN)); };
   const chOf = f => fmChans(db, f);
-  // B = giá gốc (gắn mọi kênh), S = giá thông minh (chỉ kênh của nó, tự tính nên không cập nhật giá hàng loạt)
+  // B = giá gốc (gắn mọi kênh), S = giá liên kết (chỉ kênh của nó, tự tính nên không cập nhật giá hàng loạt)
   const groups = db.policies.map(p => { const f = db.formulas.find(x => x.active && x.s === p.ten_chinh_sach_gia); return { p, f, chans: f ? chOf(f) : p.id === std?.id ? db.channels.map(c => c.id) : [] }; }).filter(g => g.f || g.p.id === std?.id);
   const optG = groups, pfv = pf.filter(id => optG.some(g => g.p.id === id));
   const rooms = db.rooms.filter(r => rf.includes(r.id));
@@ -207,7 +208,7 @@ export function Bulk() {
   const needDates = tab === 'limit' || (tab === 'price' && sub === 'dow');
   const cntCh = new Set(targets.map(t => t.cid)).size, cntPo = new Set(targets.map(t => t.p.id)).size;
   const pms = r => r.so_luong_phong; // Phòng trống PMS: số phòng của hạng phòng, không bị cập nhật hàng loạt thay đổi
-    // Giá S (thông minh) kế thừa giá B: các công thức có gói cơ sở C = chính sách giá này
+    // Giá S (liên kết) kế thừa giá B: các công thức có gói cơ sở C = chính sách giá này
   const kidsOf = g => db.formulas.filter(f => f.active && f.c === g.p.ten_chinh_sach_gia && pfv.includes(db.policies.find(p => p.ten_chinh_sach_gia === f.s)?.id)), kids = c => kidsOf(c.g);
   const fText = f => { let b = `Giá ${f.c}`; if (+f.d1) b = `(${b} + ${f.d1})`; if (+f.k && +f.k !== 1) b += ` × ${f.k}`; if (+f.d2) b += ` + ${f.d2}`; const l = String(f.layers || '').split(',').filter(x => x.trim()); return `= ${b}${l.length ? ` / (1 − ${l.map(x => x + '%').join(' − ')})` : ''}`; };
   const toggle = (c, ks) => ks.length ? <button type="button" title={shutG[c.k] ? 'Mở giá S' : 'Đóng giá S'} className="w-6 h-6 shrink-0 grid place-items-center rounded hover:bg-slate-200 text-slate-500" onClick={() => setShutG(o => ({ ...o, [c.k]: !o[c.k] }))}>{shutG[c.k] ? <ChevronRight className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}</button> : <span className="w-6 shrink-0" />;
@@ -247,11 +248,12 @@ export function Bulk() {
     <div className="flex-1" />{right}</div>; };
   const roomsOf = () => rooms.filter(r => cards.some(c => c.r.id === r.id)), unitsOf = r => cards.filter(c => c.r.id === r.id).flatMap(limUnits).filter(u => !u.f || !shutG[pk(u.k)]);
 
-  const apply = async () => {
+  const apply = async agreed => {
     const cal = structuredClone(db.cal); let n = 0, ok = true;
     if (tab === 'avail') {
       for (const r of rooms) for (const rg of A.get(r.id)) { const v = rg.v.map(x => num(x) ?? (mode === 'all' ? pms(r) : null)); if (v.every(x => x === null)) continue;
-        const over = v.find(x => x !== null && x > pms(r)); if (over !== undefined) { toast(`${r.ten_phong_vi}: Bán (OTA) ${over} vượt Phòng trống PMS (${pms(r)})`, true); return; }
+        const cap = Math.floor(pms(r) * 1.5), big = v.find(x => x !== null && x > cap); if (big !== undefined) { toast(`${r.ten_phong_vi}: Bán (OTA) ${big} vượt mức tối đa ${cap} (1,5 lần số phòng ${pms(r)})`, true); return; }
+        const over = v.find(x => x !== null && x > pms(r)); if (over !== undefined && agreed !== true) { setRisk({ room: r.ten_phong_vi, over, max: pms(r) }); return; }
         ok = eachDay(rg.f, rg.t, (d, w) => { if (v[w] !== null) { mutDay(cal, r.id, d).a = v[w]; n++; } }); if (!ok) return; }
     } else if (tab === 'price') {
       const put = (c, d, v) => c.chs.forEach(cid => { mutDay(cal, c.r.id, d).p[`${c.g.p.id}@${cid}`] = v; n++; });
@@ -265,11 +267,17 @@ export function Bulk() {
     }
     if (!ok) return;
     if (!n) return toast('Chưa nhập giá trị nào để cập nhật', true);
-    await commit('cal', cal); toast(`Đã cập nhật ${n} ô`);
+    setRisk(null); setAgree(false); await commit('cal', cal); toast(`Đã cập nhật ${n} ô`);
   };
   const noTarget = tab !== 'avail' && !targets.length || tab === 'avail' && !rooms.length;
   const summary = tab === 'avail' ? `${rooms.length} hạng phòng` : `${rooms.length} phòng × ${cntCh} kênh × ${cntPo} chính sách = ${targets.length} ô` + (needDates ? ` · ${nDays} ngày` : '');
   return <>
+    {risk && <div className="fixed inset-0 z-[70] grid place-items-center max-md:place-items-end bg-slate-900/40 anim-fade" onClick={() => { setRisk(null); setAgree(false); }}><div className="w-[480px] max-w-[92vw] max-md:!max-w-none max-md:!w-full bg-white rounded-2xl max-md:rounded-b-none shadow-2xl p-6 anim-pop" onClick={e => e.stopPropagation()}>
+      <h3 className="font-serif text-lg font-bold text-ink">Cảnh báo rủi ro bán vượt phòng</h3>
+      <p className="mt-2 text-slate-600">Số lượng bán bạn nhập cho <b>{risk.room}</b> ({risk.over}) lớn hơn số phòng hiện có ({risk.max}). Vui lòng lưu ý:</p>
+      <ul className="mt-2 list-disc pl-5 space-y-1 text-slate-600"><li>Bán vượt số phòng có thể dẫn đến <b>overbooking</b>: khách đã đặt nhưng không đủ phòng.</li><li>Phát sinh chi phí chuyển khách, bồi thường khách.</li><li>Có thể bị kênh bán phạt và ảnh hưởng uy tín khách sạn.</li><li>Bellhop không chịu trách nhiệm đối với mọi rủi ro, tổn thất hoặc khiếu nại phát sinh từ việc bán vượt số phòng này.</li></ul>
+      <label className="mt-4 flex items-start gap-2.5 cursor-pointer font-medium text-ink"><input type="checkbox" className="mt-1 w-4 h-4 accent-[#0b2a4a]" checked={agree} onChange={e => setAgree(e.target.checked)} />Tôi đã đọc, hiểu rõ rủi ro và đồng ý tự chịu trách nhiệm.</label>
+      <div className="mt-6 flex justify-end gap-2 max-md:[&>button]:flex-1"><Btn kind="ghost" onClick={() => { setRisk(null); setAgree(false); }}>Huỷ</Btn><Btn disabled={!agree} onClick={() => apply(true)}>Đồng ý cập nhật</Btn></div></div></div>}
     <Tabs value={tab} onChange={setTab} items={[['avail', 'Phòng trống'], ['price', 'Giá'], ['limit', 'Hạn chế']]} />
     {tab === 'avail' && <>
       <div className="grid grid-cols-1 md:grid-cols-4 gap-5 mb-4"><MultiSelect label="Loại phòng" opts={roomOpts(db)} value={rf} onChange={setRf} /></div>
@@ -310,7 +318,7 @@ export function Bulk() {
         {sub === 'dow' && <div className="max-md:col-span-3"><span className="lbl">Khoảng ngày áp dụng</span><div className="flex items-center gap-2">
           <input type="date" min={today} className="field max-md:min-w-0 max-md:!px-2 max-md:!text-[13px]" value={pFrom} onChange={e => { if (!e.target.value) return; setPFrom(e.target.value); if (pTo < e.target.value) setPTo(e.target.value); }} /><span className="text-slate-400">–</span>
           <input type="date" min={pFrom || today} className="field max-md:min-w-0 max-md:!px-2 max-md:!text-[13px]" value={pTo} onChange={e => e.target.value && setPTo(e.target.value)} /></div></div>}</div>
-      <div className="flex items-center justify-between max-md:justify-end mb-3"><span className="text-xs text-slate-500 max-md:hidden">{sub === 'dow' ? 'Nhập giá B; giá thông minh (S) tự tính theo B và áp dụng cho các kênh được gắn' : 'Nhập giá B theo khoảng ngày; giá thông minh (S) tự tính theo B'}</span>
+      <div className="flex items-center justify-between max-md:justify-end mb-3"><span className="text-xs text-slate-500 max-md:hidden">{sub === 'dow' ? 'Nhập giá B; giá liên kết (S) tự tính theo B và áp dụng cho các kênh được gắn' : 'Nhập giá B theo khoảng ngày; giá liên kết (S) tự tính theo B'}</span>
         <button type="button" className="text-xs font-medium text-brand" onClick={() => setShutG(cards.every(c => shutG[c.k]) ? {} : Object.fromEntries(cards.map(c => [c.k, true])))}>{cards.every(c => shutG[c.k]) ? 'Mở rộng tất cả' : 'Thu gọn tất cả'}</button></div>
       <div className="space-y-3">{cards.length ? roomsOf().map(r => <Card key={r.id}>
         <div className={ROOMHEAD}><span className="font-serif font-bold text-ink">{r.ten_phong_vi}</span></div>

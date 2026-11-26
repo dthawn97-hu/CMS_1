@@ -3,6 +3,8 @@ import { ChevronDown, ChevronRight, CloudUpload, Handshake, Plus, Printer, X } f
 import { money, useDB } from '../store.jsx';
 import { Btn, Card, ask, toast } from '../ui.jsx';
 import { Underline } from './FinanceFunds.jsx';
+import { useFin, uid } from '../finStore.js';
+import { ShiftLogs } from './ShiftManage.jsx';
 
 // ponytail: dữ liệu ca mẫu, chỉ nằm trong state của trang (PMS chưa có backend) — nối API khi có PMS
 const OPENED = '06/11/2026 03:39', OPENING = 500000, STAFF = ['Smoke Test Admin', 'Lễ tân A', 'Lễ tân B'];
@@ -14,13 +16,13 @@ const PAY = [
 const sum = (l, f = () => true) => l.filter(f).reduce((a, p) => a + p.amount, 0), N = n => money(n), Row = ({ children, cls = '' }) => <div className={`flex items-center justify-between ${cls}`}>{children}</div>;
 
 function Handover() {
-  const { db } = useDB(), cash = t => sum(PAY, p => p.type === t && p.method === 'Tiền mặt'), bank = t => sum(PAY, p => p.type === t && p.method !== 'Tiền mặt'),
+  const { db } = useDB(), [fin, setFin] = useFin(), cash = t => sum(PAY, p => p.type === t && p.method === 'Tiền mặt'), bank = t => sum(PAY, p => p.type === t && p.method !== 'Tiền mặt'),
     thu = cash('thu') + bank('thu'), chi = cash('chi') + bank('chi'), now = OPENING + cash('thu') - cash('chi');
   const [real, setReal] = useState(String(now)), [next, setNext] = useState(''), [mgr, setMgr] = useState(String(now)), [tasks, setTasks] = useState([]), [t, setT] = useState(''), [urgent, setUrgent] = useState(false), [to, setTo] = useState(db.account.ho_va_ten || STAFF[0]), [note, setNote] = useState(''), [done, setDone] = useState(false);
   const diff = now - (+real || 0), handed = (+next || 0) + (+mgr || 0), gap = handed - (+real || 0), staff = [...new Set([db.account.ho_va_ten, ...STAFF].filter(Boolean))];
   const L = ({ n, l, v, big, sub, blue }) => <Row cls={`${big ? 'bg-slate-100 rounded-lg px-2.5 py-3 -mx-2.5 font-semibold' : sub ? 'pl-5 text-xs py-2.5' : 'py-3'} ${blue ? 'text-brand-dark' : ''}`}><span className={blue || big ? 'font-semibold' : ''}>{n} {l}</span><span className={blue || big ? 'font-semibold' : ''}>{N(v)}</span></Row>;
   const In = ({ n, l, v, set, dis }) => <Row cls="py-2 max-md:flex-col max-md:items-stretch max-md:gap-1.5"><span>{n} {l}</span><input disabled={dis} inputMode="numeric" className="field !w-40 max-md:!w-full text-right" value={v ? N(+v) : ''} onChange={e => set(e.target.value.replace(/\D/g, ''))} /></Row>;
-  const submit = async () => { if (gap !== 0) return toast('Tổng bàn giao (7 + 8) phải bằng tiền thực tế trong két', true); if (await ask(`Bàn giao ca cho ${to}?`, { title: 'Xác nhận bàn giao', ok: 'Bàn giao' })) { setDone(true); toast('Đã bàn giao ca'); } };
+  const submit = async () => { if (gap !== 0) return toast('Tổng bàn giao (7 + 8) phải bằng tiền thực tế trong két', true); if (await ask(`Bàn giao ca cho ${to}?`, { title: 'Xác nhận bàn giao', ok: 'Bàn giao' })) { setFin(f => ({ ...f, shifts: [{ id: uid(), no: `Ca #${f.shifts.length + 1}`, opened: OPENED, closed: new Date().toLocaleString('vi-VN'), from: db.account.ho_va_ten || STAFF[0], to, opening: OPENING, thuCash: cash('thu'), thuBank: bank('thu'), chiCash: cash('chi'), chiBank: bank('chi'), real: +real || 0, next: +next || 0, mgr: +mgr || 0, tasks, note, status: 'Chờ nhận ca', logs: [{ at: new Date().toLocaleString('vi-VN'), by: db.account.ho_va_ten || STAFF[0], act: 'Tạo bàn giao ca', detail: `Bàn giao cho ${to}: ca sau ${N(+next || 0)}đ, quản lý ${N(+mgr || 0)}đ; thực tế trong két ${N(+real || 0)}đ${note.trim() ? ` — ${note.trim()}` : ''}` }, ...(diff !== 0 ? [{ at: new Date().toLocaleString('vi-VN'), by: 'Hệ thống', act: 'Phát hiện chênh lệch', detail: `Dự kiến ${N(now)}đ, thực tế ${N(+real || 0)}đ: ${diff > 0 ? 'thiếu' : 'thừa'} ${N(Math.abs(diff))}đ` }] : [])] }, ...f.shifts] })); setDone(true); toast('Đã bàn giao ca — xem tại Quản lý bàn giao ca'); } };
   return <div className="grid grid-cols-2 max-md:!grid-cols-1 gap-5 items-start">
     <Card className="p-6 max-md:p-4 text-sm"><h3 className="font-semibold text-ink mb-3">Bàn giao tiền mặt (VND)</h3>
       <L n="1." l="Đầu ca" v={OPENING} /><L n="2." l="Tổng thu" v={thu} blue /><L sub n="2.1 " l="Tiền mặt" v={cash('thu')} blue /><L sub n="2.2 " l="Chuyển khoản" v={bank('thu')} blue />
@@ -61,11 +63,32 @@ function Payments() {
     <Sec k="thu" title="Khoản thu" /><Sec k="chi" title="Khoản chi" /></>;
 }
 
+// Ca được bàn giao: người nhận xác nhận đã nhận tiền + việc, rồi mới chuyển sang kế toán đối soát
+function Incoming() {
+  const { db } = useDB(), [fin, setFin] = useFin(), me = db.account.ho_va_ten || '', [who, setWho] = useState('Tất cả'), [open, setOpen] = useState(null), [cnt, setCnt] = useState(''), [note, setNote] = useState('');
+  const list = fin.shifts.filter(s => who === 'Tất cả' || s.to === who).sort((a, b) => (a.status === 'Chờ nhận ca' ? 0 : 1) - (b.status === 'Chờ nhận ca' ? 0 : 1)), names = [...new Set(fin.shifts.map(s => s.to))];
+  const start = s => { setOpen(s.id); setCnt(String(s.next)); setNote(''); };
+  const accept = s => { if ((+cnt || 0) !== s.next && !note.trim()) return toast('Số tiền nhận khác số bàn giao: nhập lý do', true);
+    setFin(x => ({ ...x, shifts: x.shifts.map(y => y.id === s.id ? { ...y, status: 'Chờ đối soát', recv: { by: s.to, at: new Date().toLocaleString('vi-VN'), counted: +cnt || 0, note: note.trim() }, logs: [...(y.logs || []), { at: new Date().toLocaleString('vi-VN'), by: s.to, act: 'Nhận ca', detail: `Thực nhận ${N(+cnt || 0)}đ${(+cnt || 0) !== s.next ? ` (lệch so với bàn giao ${N(s.next)}đ)` : ''}${note.trim() ? ` — ${note.trim()}` : ''}` }] } : y) })); setOpen(null); toast(`Đã nhận ${s.no}`); };
+  return <><div className="flex items-center gap-3 mb-4 max-md:flex-col max-md:items-stretch"><select className="field !w-60 max-md:!w-full" value={who} onChange={e => setWho(e.target.value)}><option>Tất cả</option>{names.map(n => <option key={n} value={n}>{n === me ? n + ' (tôi)' : n}</option>)}</select><span className="text-sm text-slate-500">{list.filter(s => s.status === 'Chờ nhận ca').length} ca đang chờ nhận</span></div>
+    <div className="space-y-4">{list.map(s => { const wait = s.status === 'Chờ nhận ca', o = open === s.id;
+      return <Card key={s.id} className="p-5 max-md:p-4"><div className="flex items-start justify-between gap-3 max-md:flex-wrap"><div><div className="font-semibold text-ink">{s.no} · {s.from} → {s.to}</div><div className="text-xs text-slate-500 mt-0.5">{s.opened} → {s.closed}</div></div>
+          <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${wait ? 'bg-blue-50 text-blue-700' : s.status === 'Đã đối soát' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>{s.status}</span></div>
+        <div className="mt-3 grid grid-cols-3 max-md:!grid-cols-1 gap-3 text-sm"><div><div className="text-xs text-slate-500">Tiền bàn giao cho ca sau</div><b>{N(s.next)}đ</b></div><div><div className="text-xs text-slate-500">Tiền trong két khi giao</div><b>{N(s.real)}đ</b></div><div><div className="text-xs text-slate-500">Tiền nhận thực tế</div><b>{s.recv ? N(s.recv.counted) + 'đ' : '—'}</b></div></div>
+        {s.tasks.length > 0 && <ul className="mt-3 list-disc pl-5 text-sm space-y-1">{s.tasks.map((t, i) => <li key={i}>{t.t}{t.urgent && <span className="ml-2 text-[11px] px-2 rounded-full bg-red-50 text-red-600">Gấp</span>}</li>)}</ul>}{s.note && <p className="mt-2 text-sm text-slate-600"><b className="text-ink">Ghi chú: </b>{s.note}</p>}
+        <details className="mt-3"><summary className="cursor-pointer text-sm text-slate-600 hover:text-ink">Nhật ký thao tác ({(s.logs || []).length})</summary><div className="mt-3"><ShiftLogs logs={s.logs} /></div></details>
+        {wait && !o && <div className="mt-4"><Btn onClick={() => start(s)}><Handshake className="w-4 h-4 mr-2 inline" />Nhận ca</Btn></div>}
+        {wait && o && <div className="mt-4 rounded-xl border p-4 space-y-3"><label className="block"><span className="block text-sm text-slate-600 mb-1">Số tiền thực nhận (VND)</span><input inputMode="numeric" className="field" value={cnt ? N(+cnt) : ''} onChange={e => setCnt(e.target.value.replace(/D/g, ''))} /></label>
+          {(+cnt || 0) !== s.next && <p className="text-sm text-red-600">Khác số bàn giao {N(s.next)}đ — cần ghi lý do.</p>}<label className="block"><span className="block text-sm text-slate-600 mb-1">Ghi chú nhận ca</span><textarea rows={2} className="field" value={note} onChange={e => setNote(e.target.value)} /></label>
+          <div className="flex justify-end gap-2 max-md:[&>button]:flex-1"><Btn kind="ghost" onClick={() => setOpen(null)}>Huỷ</Btn><Btn onClick={() => accept(s)}>Xác nhận nhận ca</Btn></div></div>}</Card>; })}
+      {!list.length && <p className="text-center text-slate-400 py-12">Chưa có ca nào được bàn giao.</p>}</div></>;
+}
+
 export default function Shift() {
-  const [tab, setTab] = useState('h');
-  return <><div className="flex items-start justify-between max-md:flex-col"><div className="flex-1 max-md:w-full"><Underline items={[['h', 'Bàn giao'], ['p', 'Thanh toán trong ca']]} value={tab} onChange={setTab} /></div>
+  const [tab, setTab] = useState('h'), [fin] = useFin(), waiting = fin.shifts.filter(s => s.status === 'Chờ nhận ca').length;
+  return <><div className="flex items-start justify-between max-md:flex-col"><div className="flex-1 max-md:w-full"><Underline items={[['h', 'Bàn giao'], ['i', `Ca được bàn giao${waiting ? ` (${waiting})` : ''}`], ['p', 'Thanh toán trong ca']]} value={tab} onChange={setTab} /></div>
     <div className="flex items-center gap-3 pt-1 pl-6 max-md:pl-0 max-md:pt-0 max-md:mb-4 max-md:w-full max-md:justify-between text-sm text-slate-600 shrink-0"><span><span className="max-md:hidden">Thời gian mở ca</span><span className="md:hidden">Mở ca</span>: {OPENED}</span>
       <button type="button" title="Lưu nháp" className="w-9 h-9 grid place-items-center rounded-lg border bg-white hover:bg-slate-50" onClick={() => toast('Đã lưu nháp ca')}><CloudUpload className="w-4 h-4" /></button>
       <button type="button" title="In" className="w-9 h-9 grid place-items-center rounded-lg border bg-white hover:bg-slate-50" onClick={() => window.print()}><Printer className="w-4 h-4" /></button></div></div>
-    {tab === 'h' ? <Handover /> : <Payments />}</>;
+    {tab === 'h' ? <Handover /> : tab === 'i' ? <Incoming /> : <Payments />}</>;
 }

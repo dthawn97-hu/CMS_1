@@ -37,7 +37,7 @@ export const addDays = (s, n) => { const d = new Date(s + 'T00:00'); d.setDate(d
 export const wd = s => (new Date(s + 'T00:00').getDay() + 6) % 7; // Mon=0
 export const num = v => (v === '' || v == null || isNaN(+v)) ? null : +v;
 export const money = n => Math.round(n).toLocaleString('vi-VN');
-// Kênh gắn với công thức giá thông minh: danh sách chọn f.channels; công thức cũ chưa chọn thì khớp theo tên nhận diện
+// Kênh gắn với công thức giá liên kết: danh sách chọn f.channels; công thức cũ chưa chọn thì khớp theo tên nhận diện
 export const fmChans = (db, f) => f.channels?.length ? f.channels : f.ten_nhan_dien ? db.channels.filter(c => c.name.toLowerCase().includes(f.ten_nhan_dien.toLowerCase())).map(c => c.id) : [];
 export const stdPolicy = db => db.policies.find(p => p.ma_chinh_sach_gia === 'Standard');
 export const dayOf = (db, r, d) => db.cal[r]?.[d] || { p: {}, s: {}, l: {} };

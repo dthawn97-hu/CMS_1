@@ -19,14 +19,14 @@ const DOW = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
 function Area({ pts }) {
   const W = 1000, H = 260, max = Math.max(...pts.map(p => p.v), 1), raw = max / 4, p10 = 10 ** Math.floor(Math.log10(raw)), step = [1, 2, 2.5, 5, 10].find(m => m * p10 >= raw) * p10, top = Math.ceil(max / step) * step,
     X = i => pts.length < 2 ? W / 2 : i / (pts.length - 1) * W, Y = v => H - v / top * H, ticks = Array.from({ length: Math.round(top / step) + 1 }, (_, i) => i * step);
-  const line = pts.map((p, i) => i ? ` C ${(X(i - 1) + X(i)) / 2} ${Y(pts[i - 1].v)}, ${(X(i - 1) + X(i)) / 2} ${Y(p.v)}, ${X(i)} ${Y(p.v)}` : `M ${X(0)} ${Y(p.v)}`).join(''), lbl = v => v ? (v >= 1e6 ? `${+(v / 1e6).toFixed(1)}tr` : `${v / 1e3}k`) : '0k', every = Math.ceil(pts.length / (window.matchMedia('(max-width:767px)').matches ? 5 : 31));
-  return <div><div className="flex gap-2"><div className="relative w-12 shrink-0 text-right text-[11px] text-slate-500" style={{ height: H }}>{ticks.map(t => <span key={t} className="absolute right-0 -translate-y-1/2" style={{ bottom: `${t / top * 100}%` }}>{lbl(t)}</span>)}</div>
+  const line = pts.map((p, i) => i ? ` C ${(X(i - 1) + X(i)) / 2} ${Y(pts[i - 1].v)}, ${(X(i - 1) + X(i)) / 2} ${Y(p.v)}, ${X(i)} ${Y(p.v)}` : `M ${X(0)} ${Y(p.v)}`).join(''), lbl = v => money(v), every = Math.ceil(pts.length / (window.matchMedia('(max-width:767px)').matches ? 5 : 31));
+  return <div><div className="flex gap-2"><div className="relative w-20 shrink-0 text-right text-[11px] text-slate-500" style={{ height: H }}>{ticks.map(t => <span key={t} className="absolute right-0 -translate-y-1/2" style={{ bottom: `${t / top * 100}%` }}>{lbl(t)}</span>)}</div>
     <div className="relative flex-1" style={{ height: H }}>{ticks.slice(1).map(t => <i key={t} className="absolute inset-x-0 border-t border-dashed border-slate-200" style={{ bottom: `${t / top * 100}%` }} />)}
       <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="absolute inset-0 w-full h-full overflow-visible"><path d={`${line} L ${W} ${H} L 0 ${H} Z`} fill="#e5e7eb" opacity=".6" /><path d={line} fill="none" stroke="#14213d" strokeWidth="2" vectorEffect="non-scaling-stroke" /></svg></div></div>
     <div className="flex gap-2"><div className="w-12 shrink-0" /><div className="flex-1 flex justify-between text-[11px] text-slate-500 pt-2">{pts.map((p, i) => <span key={p.d} className={i % every ? 'invisible' : ''}>{p.d.slice(5)}</span>)}</div></div></div>;
 }
 
-const ANSWERS = [[/công suất|tăng giá/i, 'Công suất 7 ngày tới đang thấp (khoảng 14%), chưa nên tăng giá. Nên giữ giá và cân nhắc khuyến mãi sớm cho tuần tới để kéo nhu cầu.'], [/adr|tháng trước/i, 'ADR tháng này khoảng 345K đ. Số liệu tháng trước chưa đủ để so sánh, bạn nên xem thêm tab Báo cáo khi có dữ liệu.'], [/deluxe|cuối tuần/i, 'Cuối tuần này công suất còn thấp, gợi ý giữ giá Deluxe ở mức hiện tại và chỉ tăng khi công suất vượt 60%.']];
+const ANSWERS = [[/công suất|tăng giá/i, 'Công suất 7 ngày tới đang thấp (khoảng 14%), chưa nên tăng giá. Nên giữ giá và cân nhắc khuyến mãi sớm cho tuần tới để kéo nhu cầu.'], [/adr|tháng trước/i, 'ADR tháng này khoảng 345.000đ. Số liệu tháng trước chưa đủ để so sánh, bạn nên xem thêm tab Báo cáo khi có dữ liệu.'], [/deluxe|cuối tuần/i, 'Cuối tuần này công suất còn thấp, gợi ý giữ giá Deluxe ở mức hiện tại và chỉ tăng khi công suất vượt 60%.']];
 const SUGG = ['Tuần tới công suất bao nhiêu? Có nên tăng giá không?', 'So sánh ADR tháng này vs tháng trước', 'Gợi ý giá cuối tuần cho phòng Deluxe'];
 
 export function Revenue() {
@@ -34,8 +34,8 @@ export function Revenue() {
   const n = Math.min(62, Math.max(1, Math.round((new Date(rng[1]) - new Date(rng[0])) / 864e5) + 1)), pts = Array.from({ length: n }, (_, i) => { const d = addDays(rng[0], i); return { d, v: revOf(d) }; }), total = pts.reduce((a, p) => a + p.v, 0);
   const first = new Date(today + 'T00:00').getDay(), cells = [...Array(first).fill(null), ...Array.from({ length: 60 }, (_, i) => ({ i, d: addDays(today, i) }))];
   const ask = t => { if (!t.trim()) return; setMsgs(m => [...m, { me: true, t }, { t: ANSWERS.find(([r]) => r.test(t))?.[1] ?? 'TheBell chưa kết nối dữ liệu thật nên chưa trả lời được câu này. Bạn thử một trong các câu gợi ý nhé.' }]); setQ(''); };
-  return <><Title keep t="Quản lý doanh thu" sub="Lịch nhu cầu + tư vấn giá thông minh." />
-    <div className="grid grid-cols-3 gap-5 mb-5"><Kpi I={BedDouble} v="20%" l="Công suất hôm nay" /><Kpi I={TrendingUp} v="345K đ" l="ADR (giá TB/đêm)" /><Kpi I={TrendingUp} v="69K đ" l="RevPAR" /></div>
+  return <><Title keep t="Công cụ tối ưu doanh thu" sub="Lịch nhu cầu + tư vấn giá liên kết." />
+    <div className="grid grid-cols-3 gap-5 mb-5"><Kpi I={BedDouble} v="20%" l="Công suất hôm nay" /><Kpi I={TrendingUp} v="345.000đ" l="ADR (giá TB/đêm)" /><Kpi I={TrendingUp} v="69.000đ" l="RevPAR" /></div>
     <Card className="p-6 max-md:p-4 mb-5"><div className="flex items-end justify-between mb-4 max-md:flex-col max-md:items-stretch max-md:gap-3"><div><h3 className="font-semibold text-ink">Doanh thu theo ngày</h3><p className="text-xs text-slate-500">Tổng kỳ đã chọn: <b className="text-ink">{(total / 1e6).toFixed(1)}M đ</b></p></div>
       <div className="flex items-end gap-3 max-md:gap-2"><Dt l="Từ ngày" v={from} set={v => { setFrom(v); if (to < v) setTo(v); }} /><Dt l="Đến ngày" v={to} min={from} set={setTo} /><Btn onClick={() => { if (new Date(to) - new Date(from) > 61 * 864e5) toast('Chỉ xem tối đa 62 ngày', true); setRng([from, to]); }}>Xem</Btn></div></div><Area pts={pts} /></Card>
     <div className="grid grid-cols-[1fr_380px] max-md:!grid-cols-1 gap-5 items-start">
@@ -50,7 +50,7 @@ export function Revenue() {
 }
 
 /* ---------------- Báo cáo vận hành ---------------- */
-const compact = n => n >= 1e6 ? `${(n / 1e6).toFixed(1).replace('.', ',')} Trđ` : `${n / 1e3} Nđ`;
+const compact = n => money(n) + 'đ';
 const EINV = [[65, '2026-11-17', 1100000], [64, '2026-11-12', 520000], [63, '2026-11-12', 520000]]
   .map(([n, d, v]) => ({ no: `1C26TBH/${String(n).padStart(7, '0')}`, who: '', total: v, vat: 0, prov: '', st: 'Đã phát hành', d }));
 const Box = ({ t, sub, right, children }) => <Card className="overflow-hidden"><div className="flex items-start justify-between gap-3 px-6 max-md:px-4 py-4 border-b"><div><h3 className="font-semibold text-ink">{t}</h3><p className="text-xs text-slate-500">{sub}</p></div>{right}</div><div className="p-6 max-md:p-4">{children}</div></Card>;

@@ -7,7 +7,7 @@ import { Title, Card } from '../ui.jsx';
 import { RAW } from './Booking.jsx';
 
 // ponytail: số liệu doanh thu/khách là số mẫu (PMS chưa có backend) — nối API báo cáo khi có PMS
-const vnd = n => money(Math.round(n)) + 'đ', tr = n => `${(n / 1e6).toFixed(1).replace('.', ',')} tr`;
+const vnd = n => money(Math.round(n)) + 'đ', tr = n => money(Math.round(n)) + 'đ';
 const TODAY = ymd(new Date()), rnd = n => { const x = Math.sin(n * 12.9898) * 43758.5453; return x - Math.floor(x); }, revOf = d => Math.round((0.6 + rnd(Date.parse(d) / 864e5) * 1.4) * 10) * 1e5;
 const TILES = [
   [CalendarCheck, 'Nhận / trả phòng', 'Khách đến và khách đi hôm nay', '/pms/front-desk'], [LayoutGrid, 'Sơ đồ phòng', 'Xem phòng trống, phòng có khách, phòng bẩn', '/pms/so-do-phong'],
@@ -16,7 +16,7 @@ const TILES = [
 const Tile = ([I, t, d, to]) => <Link key={to} to={to} className="group flex items-center gap-2 lg:gap-4 rounded-2xl border border-slate-200 bg-white p-2.5 lg:p-5 hover:border-brand hover:shadow-md transition">
   <span className="w-9 h-9 lg:w-14 lg:h-14 shrink-0 rounded-2xl bg-brand/10 text-brand-dark grid place-items-center group-hover:bg-brand group-hover:text-white transition"><I className="w-7 h-7" /></span>
   <span className="min-w-0"><span className="block truncate text-[13px] lg:text-lg font-semibold text-ink leading-snug">{t}</span><span className="hidden lg:block text-sm text-slate-500">{d}</span></span><ArrowRight className="hidden lg:block w-5 h-5 ml-auto text-slate-300 group-hover:text-brand-dark shrink-0" /></Link>;
-const Kpi = ({ l, v, n }) => <Card className="p-4 lg:p-5"><div className="text-sm text-slate-500">{l}</div><div className="text-2xl lg:text-3xl font-bold text-ink my-1">{v}</div><div className="text-xs text-slate-400">{n}</div></Card>;
+const Kpi = ({ l, v, n }) => <Card className="p-4 lg:p-5"><div className="text-sm text-slate-500">{l}</div><div className="text-xl lg:text-3xl font-bold text-ink my-1 break-words">{v}</div><div className="text-xs text-slate-400">{n}</div></Card>;
 const Alert = ({ I, n, label, hint, to, fmt, red }) => <Link to={to} className={`flex items-center gap-4 rounded-2xl border p-5 transition hover:shadow-md ${n ? (red ? 'bg-red-50 border-red-200 hover:border-red-400' : 'bg-white border-slate-200 hover:border-brand') : 'bg-white border-slate-200'}`}>
   <I className={`w-8 h-8 shrink-0 ${n ? (red ? 'text-red-600' : 'text-brand-dark') : 'text-slate-300'}`} strokeWidth={1.6} /><div className="min-w-0"><div className={`text-2xl font-bold ${n ? (red ? 'text-red-600' : 'text-ink') : 'text-slate-300'}`}>{fmt ? fmt(n) : n}</div><div className="text-sm text-slate-600">{label}</div><div className="text-xs text-slate-400">{n ? hint : 'Không có việc cần xử lý'}</div></div></Link>;
 const H = ({ children, right }) => <div className="flex items-end justify-between mb-3"><h2 className="text-lg font-semibold text-ink">{children}</h2>{right}</div>;
@@ -33,10 +33,10 @@ export default function Overview() {
   return <>
     <Title keep t={`Xin chào${name ? ', ' + name : ''}!`} sub={`Hôm nay là ${date}.`} />
     <H>Tình hình kinh doanh</H>
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 mb-4 lg:mb-5"><Kpi l="Doanh thu hôm nay" v={tr(revOf(TODAY))} n="Tất cả phòng và dịch vụ" /><Kpi l="Doanh thu 7 ngày qua" v={tr(week)} n={`Trung bình ${tr(week / 7)} mỗi ngày`} /><Kpi l="Doanh thu tháng này" v={tr(month)} n={`Tính đến ngày ${+TODAY.slice(8)}`} /><Kpi l="Công suất phòng hôm nay" v="13%" n="8 / 64 phòng đang có khách · ADR 204K · RevPAR 27K" /></div>
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 mb-4 lg:mb-5"><Kpi l="Doanh thu hôm nay" v={tr(revOf(TODAY))} n="Tất cả phòng và dịch vụ" /><Kpi l="Doanh thu 7 ngày qua" v={tr(week)} n={`Trung bình ${tr(week / 7)} mỗi ngày`} /><Kpi l="Doanh thu tháng này" v={tr(month)} n={`Tính đến ngày ${+TODAY.slice(8)}`} /><Kpi l="Công suất phòng hôm nay" v="13%" n="8 / 64 phòng đang có khách · ADR 204.000đ · RevPAR 27.000đ" /></div>
     <div className="grid lg:grid-cols-[1.4fr_1fr] gap-4 lg:gap-5 mb-8">
-      <Card className="p-4 lg:p-6"><div className="flex items-baseline justify-between mb-5"><h3 className="font-semibold text-ink">Doanh thu 7 ngày gần nhất</h3><span className="text-xs text-slate-400">Đơn vị: triệu đồng</span></div>
-        <div className="flex items-end gap-1.5 lg:gap-3 h-60">{days.map(x => <div key={x.d} className="flex-1 flex flex-col items-center justify-end h-full gap-1.5" title={`${dow(x.d)} ${x.d.slice(8)}/${x.d.slice(5, 7)}: ${vnd(x.v)}`}><span className="text-xs font-semibold text-ink">{(x.v / 1e6).toFixed(1)}</span><div className={`w-full rounded-t-md ${x.d === TODAY ? 'bg-brand-dark' : 'bg-brand/40'}`} style={{ height: `${x.v / maxD * 100 * 0.78}%` }} /></div>)}</div>
+      <Card className="p-4 lg:p-6"><div className="flex items-baseline justify-between mb-5"><h3 className="font-semibold text-ink">Doanh thu 7 ngày gần nhất</h3><span className="text-xs text-slate-400">Đơn vị: đồng</span></div>
+        <div className="flex items-end gap-1.5 lg:gap-3 h-60">{days.map(x => <div key={x.d} className="flex-1 flex flex-col items-center justify-end h-full gap-1.5" title={`${dow(x.d)} ${x.d.slice(8)}/${x.d.slice(5, 7)}: ${vnd(x.v)}`}><span className="text-xs max-md:text-[10px] font-semibold text-ink max-md:[writing-mode:vertical-rl] max-md:rotate-180">{money(x.v)}</span><div className={`w-full rounded-t-md ${x.d === TODAY ? 'bg-brand-dark' : 'bg-brand/40'}`} style={{ height: `${x.v / maxD * 100 * 0.78}%` }} /></div>)}</div>
         <div className="flex gap-1.5 lg:gap-3 mt-2">{days.map(x => <span key={x.d} className={`flex-1 text-center text-xs leading-tight ${x.d === TODAY ? 'font-semibold text-ink' : 'text-slate-500'}`}>{dow(x.d)}<br className="lg:hidden" /><span className="hidden lg:inline"> </span>{x.d.slice(8)}</span>)}</div></Card>
       <Card className="p-4 lg:p-6"><h3 className="font-semibold text-ink">Nguồn đặt phòng</h3><p className="text-sm text-slate-500 mb-4">MTD · tỉ lệ doanh thu theo kênh</p>
         <div className="mx-auto w-44 h-44 rounded-full grid place-items-center mb-5" style={{ background: `conic-gradient(${cg})` }}><div className="w-[60%] h-[60%] rounded-full bg-white" /></div>

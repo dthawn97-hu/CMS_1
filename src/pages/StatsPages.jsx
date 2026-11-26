@@ -9,7 +9,7 @@ const BAR = ['#0f7c8c', '#14213d', '#2bb3c6', '#64748b'];
 /* Biểu đồ cột thuần CSS: không thêm thư viện */
 function Bars({ data, h = 230, fmt = v => v, xLabel }) {
   const max = Math.max(...data.map(d => d.v), 1), raw = max / 4, p = 10 ** Math.floor(Math.log10(raw)), step = [1, 2, 2.5, 5, 10].find(m => m * p >= raw) * p, top = Math.ceil(max / step) * step, ticks = Array.from({ length: Math.round(top / step) + 1 }, (_, i) => i * step);
-  return <div className="pt-3"><div className="flex gap-2"><div className="relative w-14 shrink-0 text-right text-[11px] text-slate-500" style={{ height: h }}>{ticks.map(t => <span key={t} className="absolute right-0 -translate-y-1/2" style={{ bottom: `${t / top * 100}%` }}>{fmt(t)}</span>)}</div>
+  return <div className="pt-3"><div className="flex gap-2"><div className="relative w-28 shrink-0 text-right text-[11px] text-slate-500" style={{ height: h }}>{ticks.map(t => <span key={t} className="absolute right-0 -translate-y-1/2" style={{ bottom: `${t / top * 100}%` }}>{fmt(t)}</span>)}</div>
     <div className="relative flex-1 border-l border-b border-slate-300" style={{ height: h }}>{ticks.slice(1).map(t => <i key={t} className="absolute inset-x-0 border-t border-dashed border-slate-200" style={{ bottom: `${t / top * 100}%` }} />)}
       <div className="absolute inset-0 flex items-end">{data.map((d, i) => <div key={i} className="flex-1 h-full flex items-end justify-center px-[8%]" title={`${d.l}: ${fmt(d.v)}`}><div className="w-full rounded-t transition-all" style={{ height: `${d.v / top * 100}%`, minHeight: d.v ? 2 : 0, background: d.c ?? BAR[i % BAR.length] }} /></div>)}</div></div></div>
     <div className="flex gap-2"><div className="w-14 shrink-0" /><div className="flex-1 flex">{data.map((d, i) => <span key={i} className="flex-1 text-center text-xs text-slate-600 pt-2">{d.l}</span>)}</div></div>{xLabel && <div className="text-center text-xs text-slate-400 mt-1">{xLabel}</div>}</div>;
@@ -25,8 +25,8 @@ export function GeneralStats() {
       <Kpi I={TriangleAlert} v="0" l="Đang chờ hỗ trợ" /><Kpi I={Clock} v="—" l="Thời gian phản hồi TB" /><Kpi I={UserPlus} v="0" l="Khách mới (7 ngày)" /></div>
     <div className="space-y-5"><Panel t="Tin nhắn theo ngày" empty="Chưa có dữ liệu trong 7 ngày qua." /><Panel t="Câu hỏi thường gặp nhất" empty="Chưa có dữ liệu." /></div>
     <Sec t="PMS — Vận hành khách sạn" sub="Công suất, doanh thu và nhịp đặt phòng." />
-    <div className="grid grid-cols-5 gap-5 mb-5"><Kpi I={BedDouble} v="20%" l="Công suất phòng" /><Kpi I={TrendingUp} v="345K đ" l="ADR (giá phòng TB)" /><Kpi I={TrendingUp} v="69K đ" l="RevPAR" /><Kpi I={LogIn} v="1" l="Nhận phòng hôm nay" /><Kpi I={LogOut} v="0" l="Trả phòng hôm nay" /></div>
-    <div className="grid grid-cols-2 max-md:!grid-cols-1 gap-5"><Panel t="Doanh thu theo kênh (30 ngày)"><Bars h={260} fmt={v => v ? `${(v / 1e6).toFixed(1)}M đ` : '0 đ'} data={[{ l: 'Trực tiếp', v: 69.5e6 }, { l: 'OTA khác', v: 5.2e6 }, { l: 'Walk-in', v: 0.4e6 }]} /></Panel>
+    <div className="grid grid-cols-5 gap-5 mb-5"><Kpi I={BedDouble} v="20%" l="Công suất phòng" /><Kpi I={TrendingUp} v="345.000đ" l="ADR (giá phòng TB)" /><Kpi I={TrendingUp} v="69.000đ" l="RevPAR" /><Kpi I={LogIn} v="1" l="Nhận phòng hôm nay" /><Kpi I={LogOut} v="0" l="Trả phòng hôm nay" /></div>
+    <div className="grid grid-cols-2 max-md:!grid-cols-1 gap-5"><Panel t="Doanh thu theo kênh (30 ngày)"><Bars h={260} fmt={v => money(v) + ' đ'} data={[{ l: 'Trực tiếp', v: 69.5e6 }, { l: 'OTA khác', v: 5.2e6 }, { l: 'Walk-in', v: 0.4e6 }]} /></Panel>
       <Panel t="Nhịp đặt phòng (lead time, 90 ngày)"><Bars h={260} xLabel="Ngày trước" data={[[0, 117], [1, 5], [2, 2], [3, 2], [10, 1], [22, 1], [31, 1]].map(([l, v]) => ({ l, v, c: '#2bb3c6' }))} /></Panel></div></>;
 }
 

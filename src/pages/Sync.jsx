@@ -6,7 +6,7 @@ import { Btn, Title, Card, Tabs, Toggle, Table } from '../ui.jsx';
 export default function Sync() {
   const { db } = useDB(), chs = useCrud('channels');
   const [tab, setTab] = useState('bh'), [q, setQ] = useState(''), [cid, setCid] = useState(db.channels[0].id), ch = chs.get(cid);
-  // Giá thông minh (S) chỉ hiện ở các kênh được gắn; giá gốc (B) hiện ở mọi kênh
+  // Giá Liên Kết (S) chỉ hiện ở các kênh được gắn; giá gốc (B) hiện ở mọi kênh
   const mine = p => { const fs = db.formulas.filter(f => f.active && f.s === p.ten_chinh_sach_gia); return !fs.length || fs.some(f => fmChans(db, f).includes(cid)); };
   const pairs = db.policies.filter(mine).flatMap(p => db.rooms.map(r => [r, p]));
   const setMap = (k, v) => chs.patch(cid, { map: { ...ch.map, [k]: v } });
