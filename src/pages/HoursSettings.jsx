@@ -16,7 +16,7 @@ export default function HoursSettings() {
   return <>
     <Title keep t="Cấu hình giờ" sub="Cấu hình giờ nhận, trả phòng, giờ qua đêm và múi giờ." />
     <div className="grid grid-cols-1 md:grid-cols-2 gap-5 items-start">
-      <Card className="p-7 max-md:p-4 space-y-5"><h3 className="font-semibold text-ink text-lg max-md:text-base">Giờ nhận / trả phòng</h3>
+      <Card className="p-7 max-md:p-4 space-y-5"><h3 className="font-semibold text-ink text-base">Giờ nhận / trả phòng</h3>
         <Lbl l="Giờ nhận phòng (check-in)"><Time v={inn} set={setIn} /></Lbl>
         <Lbl l="Giờ trả phòng (check-out)"><Time v={out} set={setOut} /></Lbl>
         <div className="space-y-1.5"><label className="flex items-center gap-3"><input type="checkbox" checked={real} onChange={e => setReal(e.target.checked)} />Thời gian khi tạo mới đặt phòng</label>
@@ -24,7 +24,7 @@ export default function HoursSettings() {
         <div className="space-y-3"><label className="flex items-center gap-3"><input type="checkbox" checked={round} onChange={e => setRound(e.target.checked)} />Số phút làm tròn 1 giờ</label>
           {round && <Select className="w-36 max-md:w-full" f={{ v: { mins }, set: (k, x) => setMins(x) }} k="mins" opts={[5, 10, 15, 30, 60].map(m => [String(m), `${m} phút`])} />}</div>
         <SaveBtn onClick={() => toast('Đã lưu giờ nhận / trả phòng')} /></Card>
-      <Card className="p-7 max-md:p-4 space-y-5"><h3 className="font-semibold text-ink text-lg max-md:text-base">Giờ qua đêm & Múi giờ</h3>
+      <Card className="p-7 max-md:p-4 space-y-5"><h3 className="font-semibold text-ink text-base">Giờ qua đêm & Múi giờ</h3>
         <div className="text-xs text-slate-600">Cấu hình giờ qua đêm</div>
         <div className="grid grid-cols-2 gap-4"><Lbl l="Bắt đầu"><Time v={ns} set={setNs} /></Lbl><Lbl l="Kết thúc"><Time v={ne} set={setNe} /></Lbl></div>
         <Hint>Check-in trước khung giờ này tính giá ngày, sau đó tính giá đêm.</Hint>

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Plus, Search, Trash2, Upload, X, ChevronRight, ChevronLeft, ChevronsRight, ChevronsLeft, ChevronDown, Pencil, UtensilsCrossed, Infinity as InfIcon, Banknote } from 'lucide-react';
 import { useCrud, useDB, money, DAYS } from '../store.jsx';
+import { FloorRooms } from './RoomsConfig.jsx';
 import { Btn, Title, Card, H2, Table, Pager, Toggle, Seg, SearchBox, RowActions, Input, Select, Area, FToggle, FCheck, Radios, Tabs, Back, Footer, useForm, toast } from '../ui.jsx';
 
 /* ---------- Tài khoản & khách sạn (một bản ghi) ---------- */
@@ -52,7 +53,7 @@ export function Hotel() {
   const pick = async (key, files, multi) => { try { const list = await Promise.all([...files].slice(0, 8).map(x => readImg(x))); f.set(key, multi ? [...imgs, ...list].slice(0, 8) : list[0]); } catch (e) { toast(e.message || 'Không đọc được ảnh', true); } };
   return <form onSubmit={submit}>
     <div className="space-y-5 min-w-0">
-      <Tabs value={tab} onChange={setTab} items={[['gen', 'Thông tin chung'], ['ops', 'Vận hành']]} />
+      <div className="-mb-5"><Tabs value={tab} onChange={setTab} items={[['gen', 'Thông tin chung'], ['ops', 'Vận hành']]} /></div>
       {tab === 'gen' && <div className={COLS}>
       <HSec id="hs-profile" n="Hồ sơ & liên hệ" hint="Thông tin cơ bản hiển thị trên các kênh OTA">
         <div className="flex items-center gap-4 mb-5 max-md:rounded-xl max-md:border max-md:border-dashed max-md:border-slate-200 max-md:bg-slate-50 max-md:p-3"><div className="w-20 h-20 rounded-xl border border-dashed border-slate-300 bg-slate-50 grid place-items-center overflow-hidden text-xs text-slate-400">{v.logo ? <img src={v.logo} alt="Logo" className="w-full h-full object-cover" /> : 'Logo'}</div>
@@ -110,11 +111,16 @@ export function Hotel() {
 
 /* ---------- Hạng phòng ---------- */
 export function Rooms() {
+  const [tab, setTab] = useState('type');
+  return <div className="cfg"><Title t="Cấu hình Phòng & Giá" sub={<>Danh sách các hạng phòng và cấu hình chi tiết. Mở bán và quản lý phòng trống theo ngày tại <b className="text-ink">Bán phòng</b>.</>} />
+    <div className="md:hidden mb-4"><h1 className="font-serif text-ink">Cấu hình Phòng & Giá</h1><p className="text-slate-500">Hạng phòng, tầng và phòng.</p></div>
+    <Tabs items={[['type', 'Hạng phòng'], ['floor', 'Tầng & Phòng']]} value={tab} onChange={setTab} />
+    {tab === 'floor' ? <FloorRooms /> : <RoomTypeList />}</div>;
+}
+function RoomTypeList() {
   const rm = useCrud('rooms'), nav = useNavigate(), [hide, setHide] = useState(false), [q, setQ] = useState('');
   const list = rm.list.filter(r => (!hide || r.dang_hoat_dong) && (r.ten_phong_vi + r.ma_hang_phong).toLowerCase().includes(q.toLowerCase()));
-  return <div className="cfg"><Title t="Cấu hình Phòng & Giá" sub={<>Danh sách các hạng phòng và cấu hình chi tiết. Mở bán và quản lý phòng trống theo ngày tại <b className="text-ink">Bán phòng</b>.</>} />
-    <div className="md:hidden mb-4"><h1 className="font-serif text-ink">Cấu hình Phòng & Giá</h1><p className="text-slate-500">Danh sách các hạng phòng và cấu hình chi tiết.</p></div>
-    <div className="md:hidden mb-4 space-y-3"><SearchBox value={q} onChange={setQ} ph="Tìm mã/tên hạng phòng..." />
+  return <div><div className="md:hidden mb-4 space-y-3"><SearchBox value={q} onChange={setQ} ph="Tìm mã/tên hạng phòng..." />
       <div className="flex items-center gap-2"><div className="flex-1 min-w-0 flex items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700"><span className="truncate">Ẩn ngừng hoạt động</span><Toggle checked={hide} onChange={setHide} /></div>
         <Btn className="shrink-0 whitespace-nowrap inline-flex items-center justify-center gap-1.5 !py-3" onClick={() => nav('/rooms/new')}><Plus className="w-4 h-4" />Thêm phòng</Btn></div></div>
     <div className="md:hidden space-y-3">{list.map(r => <div key={r.id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">

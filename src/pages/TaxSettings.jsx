@@ -7,7 +7,7 @@ import { Btn, Card, Select, Title, toast } from '../ui.jsx';
 const ZONES = [['room', 'Tiền phòng & phụ thu', 'Doanh thu tiền phòng và phụ thu tiền phòng'], ['svc', 'Dịch vụ', 'Đèn bù, giặt là, minibar, dịch vụ phòng...'], ['total', 'Tổng hóa đơn', 'Áp dụng trên toàn bộ hóa đơn']];
 const uid = () => Math.random().toString(36).slice(2, 8);
 const num = s => s.replace(/[^\d.]/g, '');
-const Head = ({ t, sub, right, stack }) => <div className={`flex items-start justify-between ${stack ? 'max-md:flex-col max-md:gap-3' : 'gap-3'}`}><div><h3 className="font-semibold text-ink text-lg max-md:text-base max-md:leading-snug">{t}</h3>{sub && <p className="text-xs text-slate-500 mt-1">{sub}</p>}</div>{right}</div>;
+const Head = ({ t, sub, right, stack }) => <div className={`flex items-start justify-between ${stack ? 'max-md:flex-col max-md:gap-3' : 'gap-3'}`}><div><h3 className="font-semibold text-ink text-base max-md:leading-snug">{t}</h3>{sub && <p className="text-xs text-slate-500 mt-1">{sub}</p>}</div>{right}</div>;
 const AddBtn = ({ children, ...p }) => <Btn kind="ghost" {...p}><Plus className="w-4 h-4 mr-1 inline" />{children}</Btn>;
 const Fld = ({ l, children }) => <label className="block"><span className="block text-xs text-slate-600 mb-1.5">{l}</span>{children}</label>;
 

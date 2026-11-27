@@ -70,13 +70,15 @@ export function RoomMap({ sub }) {
 
 /* ---- Phân loại booking ---- */
 const OTA = ['Agoda', 'Booking.com', 'Trip.com'];
-const GROUPS = [['OTA', 'Kênh đặt phòng online qua các nền tảng', 'border-l-blue-500'], ['Công tác', 'Khách công tác, khách đi công tác', 'border-l-orange-400'], ['Travel Agent / Tour', 'Khách đến từ đại lý du lịch, công ty', 'border-l-emerald-500'],
+// nguồn mẫu theo nhóm — dùng chung cho Cài đặt > Nhóm nguồn và chọn nguồn trong chi tiết đặt phòng
+export const SRC_TREE = { OTA, Direct: ['Trực tiếp', 'Walk-in', 'Điện thoại', 'Website', 'Facebook / Zalo'], 'Cộng tác viên': ['Khách quen'] };
+export const GROUPS = [['OTA', 'Kênh đặt phòng online qua các nền tảng', 'border-l-blue-500'], ['Công tác', 'Khách công tác, khách đi công tác', 'border-l-orange-400'], ['Travel Agent / Tour', 'Khách đến từ đại lý du lịch, công ty', 'border-l-emerald-500'],
   ['Direct', 'Khách đặt trực tiếp qua website, điện thoại', 'border-l-purple-500'], ['Long Stay / Resident', 'Khách ở dài ngày, khách thuê theo tháng', 'border-l-pink-500'], ['Event / MICE', 'Khách đi theo sự kiện, hội nghị, hội thảo', 'border-l-teal-500'], ['Cộng tác viên', 'Khách được giới thiệu bởi cá nhân/đối tác', 'border-l-amber-500']];
 const code = (g, n) => g.split(' ')[0].toUpperCase() + '-' + n.toUpperCase().replace(/[^A-Z0-9]/g, '');
 const FIELDS = [['Người đại diện', 'rep'], ['Số điện thoại', 'tel', 'Số điện thoại của kênh (nếu có)'], ['Số di động', 'mob'], ['Email', 'mail', 'Email của kênh (nếu có)'], ['Email liên hệ', 'mail2'], ['Chức vụ', 'role'], ['Mã số thuế', 'tax']];
 
 export function Sources() {
-  const [src, setSrc] = useState(() => ({ OTA: OTA.map(n => ({ n })) })), [g, setG] = useState('OTA'), [sel, setSel] = useState(0), [q, setQ] = useState(''), [off, setOff] = useState({}), [det, setDet] = useState(false);
+  const [src, setSrc] = useState(() => Object.fromEntries(Object.entries(SRC_TREE).map(([g, l]) => [g, l.map(n => ({ n }))]))), [g, setG] = useState('OTA'), [sel, setSel] = useState(0), [q, setQ] = useState(''), [off, setOff] = useState({}), [det, setDet] = useState(false);
   const list = src[g] ?? [], cur = list[sel], upd = p => setSrc({ ...src, [g]: list.map((s, i) => i === sel ? { ...s, ...p } : s) });
   const shown = list.map((s, i) => [s, i]).filter(([s]) => s.n.toLowerCase().includes(q.toLowerCase()));
   return <><div className={det ? 'hidden' : ''}><MobHead t="Nhóm nguồn" sub="Quản lý nguồn đặt phòng theo từng nhóm để lọc và thống kê booking." /></div>
@@ -104,7 +106,7 @@ export function Segments() {
   const [list, setList] = useState([...SEGS.map(n => ({ n, def: true }))]), [sel, setSel] = useState(0), [det, setDet] = useState(false), cur = list[sel];
   const upd = p => setList(list.map((s, i) => i === sel ? { ...s, ...p } : s));
   return <><div className={det ? 'hidden' : ''}><MobHead t="Phân khúc khách hàng" sub="Quản lý các phân khúc dùng để phân loại khách trong booking." /></div>
-  <div className="grid grid-cols-[320px_1fr] max-md:grid-cols-1 gap-4 items-start">
+  <div className="grid grid-cols-[340px_1fr] max-md:grid-cols-1 gap-5 items-start">
     <Card className={det ? 'max-md:hidden' : ''}><div className="p-2 border-b"><Btn kind="ghost" className="w-full justify-center" onClick={() => { setList([...list, { n: 'Phân khúc mới' }]); setSel(list.length); setDet(true); }}><Plus className="w-4 h-4 mr-1 inline" />Thêm phân khúc</Btn></div>
       {list.map((s, i) => <button key={i} type="button" onClick={() => { setSel(i); setDet(true); }} className={`w-full text-left px-4 py-3 border-b last:border-b-0 border-l-4 ${i === sel ? 'bg-slate-100 max-md:bg-brand/10 border-l-ink max-md:border-l-brand' : 'border-l-transparent hover:bg-slate-50'}`}>
         <div className="flex justify-between"><b className="font-medium">{s.n}</b>{s.def && <span className="text-[10px] px-1.5 rounded bg-slate-100 border">Mặc định</span>}</div><div className="text-[11px] text-slate-400">Nhóm phân khúc khách hàng</div></button>)}</Card>
