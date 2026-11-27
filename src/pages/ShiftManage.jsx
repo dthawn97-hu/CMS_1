@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { Search, X } from 'lucide-react';
 import { money } from '../store.jsx';
 import { useFin } from '../finStore.js';
-import { Btn, Card, Title, toast } from '../ui.jsx';
+import { Btn, Card, Tabs, Title, toast } from '../ui.jsx';
+import { DailyPayments, HandoverReport } from './ShiftReports.jsx';
 
 export const ShiftLogs = ({ logs = [] }) => <div><div className="text-sm font-semibold text-ink mb-2">Nhật ký thao tác</div><ol className="relative border-l border-slate-200 ml-1.5 space-y-3">{[...logs].reverse().map((l, i) => <li key={i} className="pl-4 relative"><span className="absolute -left-[5px] top-1.5 w-2.5 h-2.5 rounded-full bg-slate-400" /><div className="text-sm text-ink"><b>{l.act}</b> <span className="text-slate-500">· {l.by}</span></div><div className="text-xs text-slate-500">{l.at}</div>{l.detail && <div className="text-sm text-slate-600 mt-0.5">{l.detail}</div>}</li>)}</ol></div>;
 const N = n => money(n) + 'đ', expected = s => s.opening + s.thuCash - s.chiCash, diffOf = s => expected(s) - s.real;
@@ -10,7 +11,7 @@ const Pill = ({ s }) => <span className={`px-2.5 py-0.5 rounded-full text-xs fon
 const Dif = ({ s }) => { const d = diffOf(s); return <b className={d === 0 ? 'text-slate-500' : 'text-red-600'}>{d === 0 ? '0đ' : (d > 0 ? 'Thiếu ' : 'Thừa ') + N(Math.abs(d))}</b>; };
 
 export default function ShiftManage() {
-  const [fin, set] = useFin(), [q, setQ] = useState(''), [stt, setStt] = useState('Tất cả'), [sel, setSel] = useState(null), [cnt, setCnt] = useState(''), [note, setNote] = useState('');
+  const [fin, set] = useFin(), [q, setQ] = useState(''), [stt, setStt] = useState('Tất cả'), [sel, setSel] = useState(null), [cnt, setCnt] = useState(''), [note, setNote] = useState(''), [tab, setTab] = useState('recon'), [sv, setSv] = useState(null); // sv: ca đang xem ở tab Chi tiết bàn giao ca
   const all = fin.shifts, rows = all.filter(s => (stt === 'Tất cả' || s.status === stt) && `${s.no} ${s.from} ${s.to}`.toLowerCase().includes(q.toLowerCase())),
     open = id => { const s = all.find(x => x.id === id); setSel(id); setCnt(String(s.real)); setNote(''); }, cur = all.find(x => x.id === sel),
     pending = all.filter(s => s.status !== 'Đã đối soát').length, bad = all.filter(s => diffOf(s) !== 0).length, tot = all.reduce((a, s) => a + diffOf(s), 0);
@@ -19,6 +20,8 @@ export default function ShiftManage() {
   const Stat = ({ l, v, c = '' }) => <Card className="p-5 max-md:p-4"><div className="text-sm text-slate-500">{l}</div><div className={`mt-1 text-2xl max-md:text-xl font-bold ${c}`}>{v}</div></Card>;
   const L = (k, v, cls = '') => <div key={k} className="flex justify-between gap-6 py-2 text-sm"><span className="text-slate-500">{k}</span><span className={`font-medium text-ink text-right ${cls}`}>{v}</span></div>;
   return <><Title keep t="Quản lý bàn giao ca" sub="Theo dõi các ca đã bàn giao, kiểm soát và đối soát dòng tiền giữa các ca." />
+    <Tabs value={tab} onChange={t => { setTab(t); setSv(null); }} items={[['recon', 'Đối soát ca'], ['bb', 'Biên bản bàn giao ca'], ['pay', 'Chi tiết bàn giao ca']]} />
+    {tab === 'bb' && <HandoverReport all={all} onOpen={open} />}{tab === 'pay' && <DailyPayments key={sv?.id} shift={sv} onClear={() => setSv(null)} />}{tab === 'recon' && <>
     <div className="grid grid-cols-4 max-md:!grid-cols-2 gap-5 max-md:gap-3 mb-5"><Stat l="Tổng số ca" v={all.length} /><Stat l="Chưa đối soát" v={pending} c="text-amber-700" /><Stat l="Ca có chênh lệch" v={bad} c={bad ? 'text-red-700' : ''} /><Stat l="Tổng chênh lệch" v={(tot > 0 ? '+' : '') + N(tot)} c={tot ? 'text-red-700' : ''} /></div>
     <Card className="p-4 mb-5 flex items-center gap-3 max-md:flex-wrap max-md:gap-2"><label className="relative w-80 max-md:w-full"><Search className="w-4 h-4 absolute left-3.5 top-[14px] text-slate-400" /><input className="field !pl-10 !h-11" placeholder="Tìm mã ca, người giao, người nhận..." value={q} onChange={e => setQ(e.target.value)} /></label>
       <select className="field !w-52 !h-11 max-md:!w-full" value={stt} onChange={e => setStt(e.target.value)}>{['Tất cả', 'Chờ nhận ca', 'Chờ đối soát', 'Đã đối soát'].map(o => <option key={o}>{o}</option>)}</select></Card>
@@ -27,9 +30,9 @@ export default function ShiftManage() {
     <Card className="overflow-x-auto max-md:hidden"><table className="w-full text-sm"><thead><tr className="border-b bg-slate-50/60">{['Ca', 'Thời gian', 'Người giao → nhận', 'Đầu ca', 'Thu', 'Chi', 'Dự kiến trong két', 'Thực tế', 'Chênh lệch', 'Trạng thái'].map((h, i) => <th key={h} className={`px-4 py-3.5 text-sm font-semibold text-slate-700 whitespace-nowrap ${i > 2 && i < 9 ? 'text-right' : 'text-left'}`}>{h}</th>)}</tr></thead>
       <tbody>{rows.map(s => <tr key={s.id} className="border-b last:border-0 hover:bg-slate-50 cursor-pointer" onClick={() => open(s.id)}><td className="px-4 py-3.5 font-semibold text-ink whitespace-nowrap">{s.no}</td><td className="px-4 text-slate-600 whitespace-nowrap text-xs">{s.opened}<br />{s.closed}</td><td className="px-4 whitespace-nowrap">{s.from} → {s.to}</td>
         <td className="px-4 text-right">{N(s.opening)}</td><td className="px-4 text-right text-emerald-700">{N(s.thuCash + s.thuBank)}</td><td className="px-4 text-right text-red-700">{N(s.chiCash + s.chiBank)}</td><td className="px-4 text-right">{N(expected(s))}</td><td className="px-4 text-right font-semibold">{N(s.real)}</td><td className="px-4 text-right"><Dif s={s} /></td><td className="px-4"><Pill s={s} /></td></tr>)}
-        {!rows.length && <tr><td colSpan={10} className="text-center text-slate-400 py-12">Không có ca phù hợp</td></tr>}</tbody></table></Card>
-    {cur && <div className="fixed inset-0 z-50 bg-black/60 anim-fade" onMouseDown={e => e.target === e.currentTarget && setSel(null)}><div className="absolute right-0 top-0 h-full w-[520px] max-w-full bg-white flex flex-col anim-slide">
-      <div className="flex items-center justify-between px-6 py-4 border-b"><div><h3 className="font-semibold text-ink">{cur.no} <Pill s={cur} /></h3><div className="text-xs text-slate-500 mt-0.5">{cur.from} → {cur.to}</div></div><button type="button" title="Đóng" onClick={() => setSel(null)}><X className="w-5 h-5 text-slate-500" /></button></div>
+        {!rows.length && <tr><td colSpan={10} className="text-center text-slate-400 py-12">Không có ca phù hợp</td></tr>}</tbody></table></Card></>}
+    {cur && <div className="fixed inset-0 z-50 bg-black/60 anim-fade" onMouseDown={e => e.target === e.currentTarget && setSel(null)}><div className="absolute right-0 top-0 h-full drawer-w bg-white flex flex-col anim-slide">
+      <div className="flex items-center justify-between px-6 py-4 border-b"><div><h3 className="font-semibold text-ink">{cur.no} <Pill s={cur} /></h3><div className="text-xs text-slate-500 mt-0.5">{cur.from} → {cur.to}</div></div><div className="flex items-center gap-3"><Btn kind="ghost" className="!h-9 !px-3 text-sm" onClick={() => { setSv(cur); setTab('pay'); setSel(null); }}>Xem chi tiết ca</Btn><button type="button" title="Đóng" onClick={() => setSel(null)}><X className="w-5 h-5 text-slate-500" /></button></div></div>
       <div className="flex-1 overflow-y-auto px-6 py-5">
       <div className="divide-y rounded-xl border px-4 mb-4">{L('Thời gian', `${cur.opened} → ${cur.closed}`)}{L('Tiền đầu ca', N(cur.opening))}{L('Thu tiền mặt', N(cur.thuCash), 'text-emerald-700')}{L('Thu chuyển khoản', N(cur.thuBank), 'text-emerald-700')}{L('Chi tiền mặt', N(cur.chiCash), 'text-red-700')}{L('Chi chuyển khoản', N(cur.chiBank), 'text-red-700')}
         {L('Dự kiến trong két', N(expected(cur)))}{L('Thực tế trong két', N(cur.real))}<div className="flex justify-between py-2 text-sm"><span className="text-slate-500">Chênh lệch</span><Dif s={cur} /></div>{L('Bàn giao ca sau', N(cur.next))}{L('Bàn giao quản lý', N(cur.mgr))}</div>

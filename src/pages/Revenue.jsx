@@ -30,7 +30,7 @@ function Drawer({ id, onClose }) {
   const f = useForm(id ? fm.get(id) : { ten_nhan_dien: '', c: names[0], s: names[0], channels: [], d1: 0, k: 1, d2: 0, layers: '', active: true });
   const submit = async e => { e.preventDefault(); await fm.save(id, f.v); onClose(); };
   return <><div className="fixed inset-0 bg-black/50 z-40 anim-fade" onClick={onClose} />
-    <form onSubmit={submit} className="fixed right-0 top-0 bottom-0 w-[1000px] max-w-[85vw] max-md:w-full max-md:max-w-none bg-white z-50 flex flex-col shadow-2xl anim-slide">
+    <form onSubmit={submit} className="fixed right-0 top-0 bottom-0 drawer-w bg-white z-50 flex flex-col shadow-2xl anim-slide">
       <div className="flex justify-between items-center px-6 py-4 border-b"><h2 className="font-serif text-xl font-bold">Thiết lập công thức giá liên kết</h2><button type="button" onClick={onClose} className="border rounded-lg p-1.5"><X className="w-4 h-4" /></button></div>
       <div className="p-6 max-md:p-4 space-y-4 flex-1 overflow-y-auto"><Input label="Tên nhận diện *" req f={f} k="ten_nhan_dien" ph="VD: Booking.com +15%" />
         <div className="grid grid-cols-[1fr_auto_1fr] max-md:grid-cols-1 gap-4 items-center">

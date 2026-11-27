@@ -3,17 +3,18 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { ArrowRight, Banknote, Check, CreditCard, PartyPopper } from 'lucide-react';
 import { money } from '../store.jsx';
 import { Back, Btn, Card, Seg, Title, toast } from '../ui.jsx';
-import { ACC, CUR, PLANS } from './Plans.jsx';
+import { ACC, MIN_ROOMS, PLANS, perRoom } from './Plans.jsx';
+import { usePlan } from '../planStore.js';
 
 // ponytail: quy trình nâng cấp chỉ ghi nhận yêu cầu (chưa có cổng thanh toán / backend) — nối API thanh toán khi có
 const STEPS = ['Gói & chu kỳ', 'Thanh toán', 'Hoàn tất'], VAT = 0.1, vnd = n => money(Math.round(n)) + ' ₫';
 const Fld = ({ l, children }) => <label className="block"><span className="block text-sm font-medium text-ink mb-1.5">{l}</span>{children}</label>;
 
 export default function PlanCheckout() {
-  const { id } = useParams(), [qs] = useSearchParams(), nav = useNavigate(), p = PLANS.find(x => x.id === id), cur = PLANS.find(x => x.id === CUR);
+  const { id } = useParams(), [qs] = useSearchParams(), nav = useNavigate(), p = PLANS.find(x => x.id === id), cur = PLANS.find(x => x.id === usePlan());
   const [step, setStep] = useState(1), [yearly, setYearly] = useState(qs.get('y') !== '0'), [method, setMethod] = useState('bank'), [inv, setInv] = useState(false), [co, setCo] = useState({ name: '', tax: '', mail: '' }), [code] = useState(() => 'UP-' + Math.random().toString(36).slice(2, 8).toUpperCase());
   if (!p || p.price == null || PLANS.indexOf(p) <= PLANS.indexOf(cur)) return <div className="py-20 text-center"><p className="text-slate-500 mb-4">Gói này không áp dụng nâng cấp trực tuyến.</p><Btn onClick={() => nav('/plans')}>Về trang Gói dịch vụ</Btn></div>;
-  const a = ACC[p.id], per = p.id === 'pro' && !yearly ? p.price * 1.15 : p.price, months = yearly ? 12 : 1, sub = per * months, vat = sub * VAT, total = sub + vat;
+  const a = ACC[p.id], per = perRoom(p, yearly), rooms = Math.max(MIN_ROOMS, +qs.get('r') || 0), months = yearly ? 12 : 1, sub = per * rooms * months, vat = sub * VAT, total = sub + vat;
   const next = () => { if (step === 2 && inv && (!co.name.trim() || !co.tax.trim())) return toast('Nhập tên công ty và mã số thuế để xuất hóa đơn', true); if (step === 2) toast('Đã ghi nhận yêu cầu nâng cấp'); setStep(step + 1); };
   const Line = ({ l, v, b }) => <div className={`flex justify-between gap-4 py-2 text-sm ${b ? 'border-t mt-1 pt-3 text-base font-bold text-ink' : 'text-slate-600'}`}><span>{l}</span><span>{v}</span></div>;
   return <>
@@ -22,7 +23,7 @@ export default function PlanCheckout() {
     <div className="grid grid-cols-[1fr_380px] max-md:!grid-cols-1 gap-5 items-start">
       <div>
         {step === 1 && <Card className="p-6 max-md:p-4 space-y-5"><div className="flex items-center gap-4"><span className={`w-14 h-14 rounded-2xl grid place-items-center ${a.tile.replace('text-amber-300', 'text-amber-600')}`}><a.I className="w-7 h-7" /></span><div><div className="font-serif text-xl font-bold text-ink">{p.name}</div><div className="text-sm text-slate-600">{p.tag}</div></div></div>
-          <div><div className="text-sm font-semibold text-ink mb-2">Chu kỳ thanh toán</div><Seg value={yearly ? 'y' : 'm'} onChange={v => setYearly(v === 'y')} items={[['y', 'Theo năm'], ['m', 'Theo tháng']]} />{p.id === 'pro' && yearly && <p className="text-sm text-emerald-700 font-medium mt-2">Bạn tiết kiệm 15% khi thanh toán theo năm.</p>}</div>
+          <div><div className="text-sm font-semibold text-ink mb-2">Chu kỳ thanh toán</div><Seg value={yearly ? 'y' : 'm'} onChange={v => setYearly(v === 'y')} items={[['y', 'Theo năm'], ['m', 'Theo tháng']]} />{yearly && <p className="text-sm text-emerald-700 font-medium mt-2">Bạn tiết kiệm 20% khi thanh toán theo năm.</p>}</div>
           <div><div className="text-sm font-semibold text-ink mb-3">Bạn sẽ có thêm</div><ul className="grid grid-cols-2 max-md:grid-cols-1 gap-x-6 gap-y-3 text-sm">{p.perks.map(x => <li key={x} className="flex items-start gap-3"><span className={`mt-0.5 w-[22px] h-[22px] shrink-0 rounded-md grid place-items-center ${a.chk.replace('text-amber-300', 'text-amber-700')}`}><Check className="w-3.5 h-3.5" strokeWidth={3} /></span>{x}</li>)}</ul></div>
           <p className="text-sm text-slate-600 rounded-xl bg-slate-50 border px-4 py-3">Gói mới được kích hoạt ngay sau khi chúng tôi xác nhận thanh toán. Dữ liệu hiện có của khách sạn được giữ nguyên.</p></Card>}
         {step === 2 && <Card className="p-6 max-md:p-4 space-y-5"><div className="text-sm font-semibold text-ink">Phương thức thanh toán</div>
@@ -35,6 +36,6 @@ export default function PlanCheckout() {
           <p className="text-slate-600 mt-2">Mã yêu cầu <b className="text-ink">{code}</b>. Gói <b className="text-ink">{p.name}</b> sẽ được kích hoạt ngay sau khi chúng tôi xác nhận thanh toán {vnd(total)}.</p><div className="mt-6 flex justify-center gap-3 max-md:flex-col"><Btn onClick={() => nav('/plans')}>Về trang Gói dịch vụ</Btn></div></Card>}
         {step < 3 && <div className="flex justify-between mt-5 max-md:flex-col-reverse max-md:gap-3">{step > 1 ? <Btn kind="ghost" onClick={() => setStep(step - 1)}>Quay lại</Btn> : <span />}<Btn onClick={next} className="inline-flex items-center justify-center gap-2">{step === 1 ? 'Tiếp tục' : 'Xác nhận nâng cấp'}<ArrowRight className="w-4 h-4" /></Btn></div>}</div>
       <Card className="p-6 sticky top-20"><div className="font-semibold text-ink mb-2">Tóm tắt đơn hàng</div><div className="rounded-xl bg-slate-50 px-3 py-2.5 text-sm mb-2 flex items-center justify-between"><span className="text-slate-600">{cur.name}</span><ArrowRight className="w-4 h-4 text-slate-400" /><b className="text-ink">{p.name}</b></div>
-        <Line l={`Gói ${p.name} × ${months} tháng`} v={vnd(sub)} /><Line l="VAT 10%" v={vnd(vat)} /><Line b l="Tổng thanh toán" v={vnd(total)} />
-        <p className="text-xs text-slate-500 mt-2">{yearly ? `Tương đương ${vnd(per)} mỗi tháng.` : 'Gia hạn hằng tháng, có thể đổi gói bất cứ lúc nào.'} Số liệu là dữ liệu mẫu.</p></Card></div></>;
+        <Line l={`Gói ${p.name} × ${rooms} phòng × ${months} tháng`} v={vnd(sub)} /><Line l="VAT 10%" v={vnd(vat)} /><Line b l="Tổng thanh toán" v={vnd(total)} />
+        <p className="text-xs text-slate-500 mt-2">{yearly ? `Tương đương ${vnd(per)} / phòng / tháng.` : 'Gia hạn hằng tháng, có thể đổi gói bất cứ lúc nào.'} Số liệu là dữ liệu mẫu.</p></Card></div></>;
 }

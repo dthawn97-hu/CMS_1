@@ -10,7 +10,7 @@ const Lbl = ({ l, req, children, className = '' }) => <label className={`block $
 const Underline = ({ items, value, onChange }) => <div className="flex gap-6 border-b border-slate-200 mb-5">{items.map(([k, l]) => <button key={k} type="button" onClick={() => onChange(k)}
   className={`pb-2.5 -mb-px border-b-2 text-sm ${value === k ? 'border-brand text-brand-dark font-semibold' : 'border-transparent text-slate-500 hover:text-ink'}`}>{l}</button>)}</div>;
 const Drawer = ({ title, onClose, children }) => <div className="fixed inset-0 z-50 bg-black/50 anim-fade" onMouseDown={e => e.target === e.currentTarget && onClose()}>
-  <div className="absolute right-0 top-0 h-full w-[500px] max-md:!w-full max-md:!max-w-none max-md:p-4 bg-white p-6 overflow-auto"><div className="flex items-center justify-between mb-5"><h3 className="text-lg font-semibold text-ink">{title}</h3><button type="button" title="Đóng" onClick={onClose}><X className="w-5 h-5" /></button></div>{children}</div></div>;
+  <div className="absolute right-0 top-0 h-full drawer-w max-md:p-4 bg-white p-6 overflow-auto"><div className="flex items-center justify-between mb-5"><h3 className="text-lg font-semibold text-ink">{title}</h3><button type="button" title="Đóng" onClick={onClose}><X className="w-5 h-5" /></button></div>{children}</div></div>;
 
 /* ---------------- Tỷ giá ---------------- */
 export function Rates() {

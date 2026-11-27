@@ -29,7 +29,8 @@ export default function Overview() {
   const days = Array.from({ length: 7 }, (_, i) => addDays(TODAY, i - 6)).map(d => ({ d, v: revOf(d) })), maxD = Math.max(...days.map(x => x.v)), week = days.reduce((a, x) => a + x.v, 0), month = Array.from({ length: +TODAY.slice(8) }, (_, i) => revOf(TODAY.slice(0, 8) + String(i + 1).padStart(2, '0'))).reduce((a, b) => a + b, 0);
   const chan = [['Agoda', 0.654, '#e91e63'], ['Expedia', 0.237, '#fdc52b'], ['CTrip / Trip.com', 0.109, '#475569']].map(([l, p, c]) => [l, Math.round(month * p), c, p]), cg = chan.reduce((a, [, , c, p]) => { const f = a.at; a.at += p * 100; a.s.push(`${c} ${f}% ${a.at}%`); return a; }, { at: 0, s: [] }).s.join(','), direct = 18, ota = RAW.filter(r => r[5] !== 'Đã huỷ').length + 9;
   const cash = id => fin.base[id] + fin.vouchers.filter(v => v.fund === id).reduce((a, v) => a + (v.type === 'thu' ? v.amount : -v.amount), 0), dow = d => ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'][new Date(d + 'T00:00').getDay()];
-  const upcoming = RAW.filter(r => r[5] !== 'Đã huỷ').sort((a, b) => a[3].localeCompare(b[3])).slice(0, 3);
+  const otaDebt = RAW.filter(r => r[5] !== 'Đã huỷ').reduce((a, r) => a + r[7], 0); // ponytail: tạm = tổng đặt phòng OTA chưa huỷ, tách phần OTA thu hộ khi có dữ liệu thanh toán
+  const upcoming =RAW.filter(r => r[5] !== 'Đã huỷ').sort((a, b) => a[3].localeCompare(b[3])).slice(0, 3);
   return <>
     <Title keep t={`Xin chào${name ? ', ' + name : ''}!`} sub={`Hôm nay là ${date}.`} />
     <H>Tình hình kinh doanh</H>
@@ -43,7 +44,7 @@ export default function Overview() {
         {chan.map(([l, v, c, p]) => <div key={l} className="flex items-center gap-3 py-1.5 text-sm" title={tr(v)}><span className="w-3 h-3 rounded-full" style={{ background: c }} /><span className="flex-1 text-ink">{l}</span><span className="font-mono text-slate-500">{(p * 100).toFixed(1)}%</span></div>)}
       </Card></div>
     <H>Tiền và công nợ</H>
-    <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4 mb-8"><Kpi l="Tiền mặt trong quỹ" v={vnd(cash('cash'))} n="Theo sổ quỹ tiền mặt" /><Kpi l="Tiền gửi ngân hàng" v={vnd(cash('bank'))} n="Theo sổ quỹ tiền gửi" /><Kpi l="Còn nợ nhà cung cấp" v={vnd(debt)} n="Cần thanh toán" /></div>
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 mb-8"><Kpi l="Tiền mặt trong quỹ" v={vnd(cash('cash'))} n="Theo sổ quỹ tiền mặt" /><Kpi l="Tiền gửi ngân hàng" v={vnd(cash('bank'))} n="Theo sổ quỹ tiền gửi" /><Kpi l="Còn nợ nhà cung cấp" v={vnd(debt)} n="Cần thanh toán" /><Kpi l="Công nợ từ OTA" v={vnd(otaDebt)} n="OTA thu hộ, chưa chuyển về khách sạn" /></div>
     <div className="grid lg:grid-cols-[1fr_1.3fr] gap-5 mb-8">
       <div><H>Cần chú ý</H><div className="grid grid-cols-2 gap-4">
         <Alert I={Inbox} n={newOta} label="Đặt phòng OTA mới" hint="Bấm để xem danh sách" to="/booking" /><Alert I={Globe} n={offline} label="Kênh OTA chưa kết nối" hint="Cần kết nối để nhận đặt phòng" to="/sync" />

@@ -116,7 +116,7 @@ function Detail({ b, onClose }) {
   const pre = b.total / 1.0945, tax = b.total - pre, canceled = b.status === 'Đã huỷ', mail = 'tu***@' + c.mail, atFull = `${b.at.slice(11)}:59 ${dmy(b.at)}`;
   useEffect(() => { const h = e => e.key === 'Escape' && onClose(); window.addEventListener('keydown', h); return () => window.removeEventListener('keydown', h); }, []);
   return <><div className="fixed inset-0 bg-slate-900/50 z-40 anim-fade" onClick={onClose} />
-    <div className="fixed right-0 top-0 bottom-0 w-[1300px] max-w-full max-md:left-0 max-md:w-auto max-md:max-w-none bg-white z-50 flex flex-col shadow-2xl anim-slide">
+    <div className="fixed right-0 top-0 bottom-0 drawer-w bg-white z-50 flex flex-col shadow-2xl anim-slide">
       <div className="flex justify-between items-center px-7 max-md:px-4 py-4 border-b bg-white max-md:flex-row-reverse max-md:justify-end max-md:gap-3"><h2 className="font-serif text-xl font-bold">Chi tiết đặt phòng</h2><button type="button" onClick={onClose} className="w-9 h-9 grid place-items-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-ink"><X className="w-5 h-5" /></button></div>
       <div className="flex-1 overflow-y-auto p-7 max-md:p-4 pb-12">
         <div className="rounded-xl border border-slate-200 px-5 py-4">

@@ -80,3 +80,10 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-
 }
 .no-sb { scrollbar-width: none; }
 .no-sb::-webkit-scrollbar { display: none; }
+
+/* Kích thước chung cho mọi drawer bên phải */
+.drawer-w { width: 54vw; min-width: 560px; max-width: 100vw }
+@media (max-width: 767px) { .drawer-w { width: 100%; min-width: 0 } }
+
+/* mũi tên select không đè lên chữ (px-3 của .field ghi đè padding-right của plugin forms) */
+select.field { padding-right: 2.25rem; }
