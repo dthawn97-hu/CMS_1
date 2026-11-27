@@ -16,7 +16,7 @@ function Preview({ o, colors }) {
   const price = { first: '800.000đ', last: '850.000đ', total: '2.450.000đ' }[o.price];
   return <Card className="p-5 max-md:p-4 mb-5"><div className="flex items-center justify-between gap-2 mb-4"><b className="inline-flex items-center gap-2"><Eye className="w-4 h-4 max-md:inline hidden" />Xem trước booking card</b>
     <Select className="w-40 max-md:w-44 [&_.field]:!py-1.5" f={{ v: { ch }, set: (k, x) => setCh(x) }} k="ch" opts={CHANNELS} /></div>
-    <div className="mx-auto w-full max-w-[420px] flex rounded-lg overflow-hidden border border-slate-200 shadow-sm">
+    <div className="mx-auto w-full max-w-[420px] flex rounded-lg overflow-hidden border border-[#9fb0c6] shadow-sm">
       <div className="w-[88px] text-white grid place-items-center text-center py-4" style={{ background: colors['Đã đặt'] }}><div><CalendarCheck className="w-4 h-4 mx-auto mb-1" /><div className="text-[10px] font-bold">SUP</div><div className="text-2xl font-bold">101</div></div></div>
       <div className="flex-1 p-2.5 text-xs bg-white"><div className="flex justify-between items-center"><span className="font-medium">{ch}</span><span className="px-1.5 rounded-full bg-blue-50 text-blue-700 text-[10px]">Đã đặt</span></div>
         <div className="font-semibold text-sm mt-0.5">{o.guest === 'nat' && '🇻🇳 '}Nguyễn Văn A{o.guest === 'sex' && ' (Nam)'}{o.seg && ' - Gia đình'}</div>

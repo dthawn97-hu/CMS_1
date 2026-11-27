@@ -40,7 +40,7 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-
 /* ---------- Cài đặt: giao diện mềm hơn (chỉ áp dụng trong .st) ---------- */
 .st { max-width: 1480px; }
 .st h1 { font-size: 1.375rem; letter-spacing: -.01em; }
-.st .bg-white.border.rounded-xl { border-color: #e7edf4; border-radius: 16px; box-shadow: 0 1px 2px rgb(20 33 61 / .04), 0 10px 28px -14px rgb(20 33 61 / .14); }
+.st .bg-white.border.rounded-xl, .st .rounded-2xl.border { border-color: #9fb0c6; border-radius: 16px; box-shadow: 0 1px 2px rgb(20 33 61 / .06), 0 8px 22px -14px rgb(20 33 61 / .18); }
 .st .field { border-color: #dbe3ee; border-radius: 10px; background: #fbfcfe; padding-top: .65rem; padding-bottom: .65rem; }
 .st .field:hover:not(:disabled) { border-color: #b4c2d4; }
 .st .field:focus { background: #fff; border-color: #2bb3c6; box-shadow: 0 0 0 3px rgb(43 179 198 / .18); }

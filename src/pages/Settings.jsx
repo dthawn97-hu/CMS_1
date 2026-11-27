@@ -5,7 +5,7 @@ import { Building2, BedDouble, LayoutGrid, Clock, Percent, Printer, Coins, QrCod
 import { Soon } from './Overview.jsx';
 
 export const PMS_SET = [['Sơ đồ phòng', 'so-do-phong'], ['Cấu hình giờ', 'gio'], ['Thuế / Phí', 'thue-phi'], ['Máy in & Mẫu in', 'may-in'], ['Tỷ giá', 'ty-gia'], ['Thanh toán QRcode', 'qrcode'], ['Import dữ liệu', 'import'], ['Cấu hình dịch vụ', 'dich-vu']].map(([t, s]) => [t, '/settings/pms/' + s]);
-export const MAP = [['Thông tin hiển thị', 'thong-tin'], ['Màu đặt phòng', 'mau'], ['Nhóm nguồn', 'nhom-nguon'], ['Phân khúc khách hàng', 'phan-khuc'], ['Phân loại khách hàng', 'hang-khach']].map(([t, s]) => [t, '/settings/pms/so-do-phong/' + s]);
+export const MAP = [['Thông tin hiển thị', 'thong-tin'], ['Nhóm nguồn', 'nhom-nguon'], ['Phân khúc khách hàng', 'phan-khuc'], ['Phân loại khách hàng', 'hang-khach']].map(([t, s]) => [t, '/settings/pms/so-do-phong/' + s]);
 const ALL_GROUPS = [['CHUNG', [['Hồ sơ khách sạn', '/hotel'], ['Cấu hình phòng', '/rooms']]], ['SƠ ĐỒ PHÒNG', MAP], ['PMS', PMS_SET.slice(1)], ['HỆ THỐNG', [['Phân quyền', '/roles']]]];
 const HIDE_FREE = '/settings/pms/so-do-phong/hang-khach'; // gói Miễn phí không có phân loại khách hàng
 const ICON = { '/hotel': Building2, '/rooms': BedDouble, 'thong-tin': LayoutGrid, mau: Palette, 'nhom-nguon': Network, 'phan-khuc': Users, 'hang-khach': Workflow, gio: Clock, 'thue-phi': Percent, 'may-in': Printer, 'ty-gia': Coins, qrcode: QrCode, import: FileUp, 'dich-vu': ConciergeBell, '/roles': ShieldCheck };
@@ -17,7 +17,7 @@ export const SettingsLayout = ({ children }) => {
   const free = usePlan() === 'free', GROUPS = ALL_GROUPS, lk = to => free && to === HIDE_FREE, { pathname } = useLocation(), nav = useNavigate(), [open, setOpen] = useState(false), on = p => pathname === p || pathname.startsWith(p + '/'), all = GROUPS.flatMap(g => g[1]), cur = all.find(([, to]) => on(to));
   if (free && pathname === HIDE_FREE) return <Navigate to={MAP[0][1]} replace />;
   return <div className="st">
-    <div className="md:hidden mb-3"><div className="flex items-center gap-1.5 text-sm text-slate-500"><SlidersHorizontal className="w-4 h-4" />Cài đặt<span>›</span>
+    <div className="md:hidden mb-3"><div className="flex items-center gap-1.5 text-sm text-slate-500"><SlidersHorizontal className="w-4 h-4" />Cấu hình chung<span>›</span>
       <button type="button" onClick={() => setOpen(true)} className="inline-flex items-center gap-1 rounded-full bg-brand/10 text-brand-dark font-semibold pl-3 pr-2 py-1 min-w-0"><span className="truncate">{cur?.[0] || 'Chọn mục'}</span><ChevronDown className="w-4 h-4 shrink-0" /></button></div>
       {open && <><div className="fixed inset-0 bg-black/40 z-40 anim-fade" onClick={() => setOpen(false)} />
         <div className="fixed inset-x-0 bottom-0 z-50 max-h-[75vh] overflow-y-auto rounded-t-2xl bg-white p-3 pb-6 shadow-2xl anim-rise"><div className="mx-auto mb-2 h-1 w-10 rounded-full bg-slate-200" />
