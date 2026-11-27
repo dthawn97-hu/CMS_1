@@ -83,14 +83,18 @@ const MORE_HOTELS = ['Bellhop Riverside Đà Nẵng', 'Bellhop Old Quarter Hà N
 const noAccent = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/gi, 'd').toLowerCase();
 
 function HotelPicker() {
-  const { db } = useDB(), [cur, setCur] = useState(''), [q, setQ] = useState('');
+  const { db } = useDB(), [cur, setCur] = useState(''), [q, setQ] = useState(''), [open, setOpen] = useState(false);
   const list = [db.hotel.ten_khach_san, ...MORE_HOTELS].filter(Boolean), sel = cur || list[0] || '—', shown = list.filter(h => noAccent(h).includes(noAccent(q)));
-  return <details className="relative min-w-0" onBlur={e => !e.currentTarget.contains(e.relatedTarget) && (e.currentTarget.open = false)}>
-    <summary title="Chọn khách sạn" className="list-none cursor-pointer flex items-center gap-2 h-9 pl-3 pr-2 rounded-lg border border-slate-200 hover:bg-slate-50 text-[13px] font-semibold text-ink max-w-[220px] sm:max-w-[300px]"><Building2 className="w-4 h-4 text-slate-400 shrink-0" /><span className="truncate">{sel}</span><ChevronDown className="w-4 h-4 text-slate-400 shrink-0" /></summary>
-    <div className="absolute left-0 mt-2 w-80 max-w-[calc(100vw-1.5rem)] rounded-xl border border-slate-200 bg-white shadow-xl">
-      <div className="p-2 border-b relative"><Search className="w-4 h-4 text-slate-400 absolute left-5 top-1/2 -translate-y-1/2" /><input autoFocus value={q} onChange={e => setQ(e.target.value)} placeholder="Tìm tên khách sạn..." className="w-full h-9 pl-8 pr-3 rounded-lg border border-slate-200 text-sm outline-none focus:border-navy-700" /></div>
-      <div className="max-h-64 overflow-y-auto py-1">{shown.map(h => <button key={h} type="button" onClick={e => { setCur(h); setQ(''); e.currentTarget.closest('details').open = false; }} className={`w-full text-left px-4 py-2 text-sm hover:bg-slate-50 ${h === sel ? 'font-semibold text-ink bg-slate-50' : 'text-slate-700'}`}>{h}</button>)}
-        {!shown.length && <p className="px-4 py-6 text-center text-sm text-slate-400">Không tìm thấy khách sạn</p>}</div></div></details>;
+  const pick = h => { setCur(h); setQ(''); setOpen(false); };
+  // desktop: dropdown dưới nút; mobile: drawer trượt từ dưới lên
+  return <div className="relative min-w-0">
+    <button type="button" title="Chọn khách sạn" onClick={() => setOpen(!open)} className="flex items-center gap-2 h-9 pl-3 pr-2 max-md:px-2.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-[13px] font-semibold text-ink max-w-[220px] sm:max-w-[300px]"><Building2 className="w-4 h-4 text-slate-400 shrink-0" /><span className="truncate max-md:hidden">{sel}</span><ChevronDown className="w-4 h-4 text-slate-400 shrink-0 max-md:hidden" /></button>
+    {open && <><div className="fixed inset-0 z-[60] max-md:bg-black/40 max-md:anim-fade" onClick={() => setOpen(false)} />
+      <div className="z-[61] md:absolute md:left-0 md:mt-2 md:w-80 md:rounded-xl md:border md:border-slate-200 md:bg-white md:shadow-xl max-md:fixed max-md:inset-x-0 max-md:bottom-0 max-md:rounded-t-2xl max-md:bg-white max-md:shadow-2xl max-md:anim-rise max-md:pb-5">
+        <div className="md:hidden mx-auto mt-2 mb-3 h-1 w-10 rounded-full bg-slate-200" /><div className="md:hidden px-4 pb-2 font-semibold text-ink">Chọn khách sạn</div>
+        <div className="p-2 md:border-b relative"><Search className="w-4 h-4 text-slate-400 absolute left-5 top-1/2 -translate-y-1/2" /><input autoFocus={window.innerWidth >= 768} value={q} onChange={e => setQ(e.target.value)} placeholder="Tìm tên khách sạn..." className="w-full h-10 md:h-9 pl-8 pr-3 rounded-lg border border-slate-200 text-sm outline-none focus:border-navy-700" /></div>
+        <div className="max-h-64 max-md:max-h-[55vh] overflow-y-auto py-1">{shown.map(h => <button key={h} type="button" onClick={() => pick(h)} className={`w-full text-left px-4 py-2.5 md:py-2 text-sm hover:bg-slate-50 ${h === sel ? 'font-semibold text-ink bg-slate-50' : 'text-slate-700'}`}>{h}</button>)}
+          {!shown.length && <p className="px-4 py-6 text-center text-sm text-slate-400">Không tìm thấy khách sạn</p>}</div></div></>}</div>;
 }
 
 // Tạm thời: chuyển nhanh giữa 3 gói để xem hệ thống thay đổi theo gói
