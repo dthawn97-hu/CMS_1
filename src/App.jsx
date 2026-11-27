@@ -87,8 +87,8 @@ function HotelPicker() {
   const list = [db.hotel.ten_khach_san, ...MORE_HOTELS].filter(Boolean), sel = cur || list[0] || '—', shown = list.filter(h => noAccent(h).includes(noAccent(q)));
   const pick = h => { setCur(h); setQ(''); setOpen(false); };
   // desktop: dropdown dưới nút; mobile: drawer trượt từ dưới lên
-  return <div className="relative min-w-0">
-    <button type="button" title="Chọn khách sạn" onClick={() => setOpen(!open)} className="flex items-center gap-2 h-9 pl-3 pr-2 max-md:px-2.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-[13px] font-semibold text-ink max-w-[220px] sm:max-w-[300px]"><Building2 className="w-4 h-4 text-slate-400 shrink-0" /><span className="truncate max-md:hidden">{sel}</span><ChevronDown className="w-4 h-4 text-slate-400 shrink-0 max-md:hidden" /></button>
+  return <div className="relative shrink-0">
+    <button type="button" title="Chọn khách sạn" onClick={() => setOpen(!open)} className="flex items-center gap-2 h-9 shrink-0 pl-3 pr-2 max-md:px-2.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-[13px] font-semibold text-ink max-w-[220px] sm:max-w-[300px]"><Building2 className="w-4 h-4 text-slate-400 shrink-0" /><span className="truncate max-md:hidden">{sel}</span><ChevronDown className="w-4 h-4 text-slate-400 shrink-0 max-md:hidden" /></button>
     {open && <><div className="fixed inset-0 z-[60] max-md:bg-black/40 max-md:anim-fade" onClick={() => setOpen(false)} />
       <div className="z-[61] md:absolute md:left-0 md:mt-2 md:w-80 md:rounded-xl md:border md:border-slate-200 md:bg-white md:shadow-xl max-md:fixed max-md:inset-x-0 max-md:bottom-0 max-md:rounded-t-2xl max-md:bg-white max-md:shadow-2xl max-md:anim-rise max-md:pb-5">
         <div className="md:hidden mx-auto mt-2 mb-3 h-1 w-10 rounded-full bg-slate-200" /><div className="md:hidden px-4 pb-2 font-semibold text-ink">Chọn khách sạn</div>
@@ -105,12 +105,12 @@ function PlanSwitch() {
 
 function Header({ onToggle }) {
   const { db } = useDB(), name = db.account.ho_va_ten || '', ini = (name || 'NN').split(' ').map(w => w[0]).slice(-2).join('').toUpperCase();
-  return <header className="sticky top-0 z-40 h-14 shrink-0 bg-white border-b border-slate-200 px-4 flex items-center gap-3">
+  return <header className="sticky top-0 z-40 h-14 shrink-0 bg-white border-b border-slate-200 px-4 max-md:px-3 flex items-center gap-3 max-md:gap-2">
     <button type="button" title="Đóng/mở menu" onClick={onToggle} className="p-1.5 rounded text-slate-500 hover:text-ink hover:bg-slate-100"><PanelLeft className="w-5 h-5" /></button>
     <span className="text-sm text-slate-600 hidden lg:block">{new Date().toLocaleDateString('vi-VN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</span><div className="flex-1" />
     <PlanSwitch />
     <HotelPicker />
-    <details className="relative"><summary title="Thông báo" className="list-none cursor-pointer w-9 h-9 grid place-items-center rounded-full text-slate-500 hover:bg-slate-100"><Bell className="w-5 h-5" /></summary>
+    <details className="relative shrink-0"><summary title="Thông báo" className="list-none cursor-pointer w-9 h-9 grid place-items-center rounded-full text-slate-500 hover:bg-slate-100"><Bell className="w-5 h-5" /></summary>
       <div className="absolute right-0 mt-2 w-72 max-w-[calc(100vw-1.5rem)] rounded-xl border border-slate-200 bg-white shadow-xl"><div className="px-4 py-3 border-b font-semibold text-ink">Thông báo</div><p className="px-4 py-6 text-center text-sm text-slate-400">Chưa có thông báo mới</p></div></details>
     <details className="relative" onBlur={e => !e.currentTarget.contains(e.relatedTarget) && (e.currentTarget.open = false)}>
       <summary title="Tài khoản" className="list-none cursor-pointer flex items-center gap-2.5 pl-3 border-l border-slate-200 hover:opacity-80"><div className="w-8 h-8 rounded-full bg-ink text-white grid place-items-center text-xs font-bold">{ini}</div>
